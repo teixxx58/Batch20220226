@@ -1,0 +1,302 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<sqlMap namespace="BT0101Batch"
+        xmlns="http://ibatis.apache.org/mapping"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+
+  <statements>
+    <statement id="CreateImportFileWkTable" >
+      create table T_IMPORTED_FILE_WK (
+      PUB_NO character varying(10) not null
+      , IMPORTED_FILE_PATH text not null
+      , IMPOTED_FILE_UPDATE_DATE timestamp not null
+      , FILE_STATUS_FLG character varying(1)
+	  , FILE_KBN character varying(1)
+      )
+    </statement>
+    <statement id="DropImportFileWkTable" >
+      drop table if exists T_IMPORTED_FILE_WK cascade
+    </statement>
+
+    <delete id="DeleteImportFile" parameterClass="System.String">
+      DELETE FROM T_IMPORTED_FILE WHERE IMPORTED_FILE_PATH = #importedFilePath#
+    </delete>
+    <select id="selectImportFile" parameterClass="System.String" resultClass="System.Collections.Hashtable">
+      Select IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE FROM T_IMPORTED_FILE WHERE IMPORTED_FILE_PATH = #importedFilePath#
+    </select>
+    <insert id="InsertImportFile" parameterClass="BT0101.DBClass.CTImportFile" >
+      INSERT INTO T_IMPORTED_FILE (IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, INSERT_USER_ID,INSERT_DT, UPDATE_USER_ID, UPDATE_DT)
+      VALUES (#importedFilePath#, #impotedFileUpdateDate#, null, NOW(),null, NOW())
+    </insert>
+
+    <insert id="InsertImportFileWk" parameterClass="BT0101.DBClass.CTImportFileWk" >
+		INSERT INTO T_IMPORTED_FILE_WK (PUB_NO, IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, FILE_STATUS_FLG, FILE_KBN)
+		VALUES (#pubNo#,#importedFilePath#, #impotedFileUpdateDate#, #fileStatusFlg#, #fileKbn#)
+	</insert>
+
+    <select id="selectImportFileWk" parameterClass="System.String" resultClass="System.Collections.Hashtable">
+		Select PUB_NO, IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, FILE_STATUS_FLG, FILE_KBN FROM T_IMPORTED_FILE_WK
+	</select>
+
+    <select id="selectImportFileDiff" parameterClass="System.String" resultClass="System.Collections.Hashtable">
+		WITH diffTmp1 AS( SELECT T1.PUB_NO, T1.IMPORTED_FILE_PATH, T1.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NOT NULL AND T2.IMPORTED_FILE_PATH IS NULL Then '0'
+		WHEN T2.IMPORTED_FILE_PATH IS NOT NULL  AND T2.IMPOTED_FILE_UPDATE_DATE != T1.IMPOTED_FILE_UPDATE_DATE Then '2'
+		ELSE '5'
+		END AS FILE_STATUS_FLG
+		FROM T_IMPORTED_FILE_WK T1
+		LEFT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		),
+		diffTmp2 AS( SELECT T1.PUB_NO,T2.IMPORTED_FILE_PATH,T2.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NULL AND T2.IMPORTED_FILE_PATH IS NOT NULL Then '1'
+		ELSE '5'
+		END AS FILE_STATUS_FLG
+		FROM T_IMPORTED_FILE_WK T1
+		RIGHT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		)
+		SELECT PUB_NO, IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, FILE_STATUS_FLG  FROM (
+		SELECT PUB_NO, IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, FILE_STATUS_FLG FROM diffTmp1 WHERE FILE_STATUS_FLG IN('0','2')
+		UNION ALL
+		SELECT PUB_NO, IMPORTED_FILE_PATH, IMPOTED_FILE_UPDATE_DATE, FILE_STATUS_FLG FROM diffTmp2 WHERE FILE_STATUS_FLG ='1'
+		) D
+
+	</select>
+
+    <select id="selectImportFileDiffPubNo" resultClass="System.Collections.Hashtable">
+		WITH diffTmp1 AS( SELECT T1.PUB_NO, T1.IMPORTED_FILE_PATH, T1.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NOT NULL AND T2.IMPORTED_FILE_PATH IS NULL Then '0'
+		WHEN T2.IMPORTED_FILE_PATH IS NOT NULL  AND T2.IMPOTED_FILE_UPDATE_DATE != T1.IMPOTED_FILE_UPDATE_DATE Then '2'
+		ELSE '5'
+		END AS FILE_STATUS_FLG,
+		FILE_KBN
+		FROM T_IMPORTED_FILE_WK T1
+		LEFT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		),
+		diffTmp2 AS( SELECT T1.PUB_NO,T2.IMPORTED_FILE_PATH,T2.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NULL AND T2.IMPORTED_FILE_PATH IS NOT NULL Then '1'
+		ELSE '5'
+		END AS FILE_STATUS_FLG,
+		FILE_KBN
+		FROM T_IMPORTED_FILE_WK T1
+		RIGHT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		)
+		SELECT D.PUB_NO
+		FROM(
+		SELECT PUB_NO, FILE_KBN FROM diffTmp1 WHERE FILE_STATUS_FLG IN('0','2')
+		UNION ALL
+		SELECT PUB_NO, FILE_KBN FROM diffTmp2 WHERE FILE_STATUS_FLG ='1'
+		) D
+		WHERE D.FILE_KBN  = '1' GROUP BY PUB_NO;
+	</select>
+
+    <select id="selectProjectFileDiff" resultClass="System.Collections.Hashtable">
+		WITH diffTmp1 AS( SELECT T1.PUB_NO, T1.IMPORTED_FILE_PATH, T1.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NOT NULL AND T2.IMPORTED_FILE_PATH IS NULL Then '0'
+		WHEN T2.IMPORTED_FILE_PATH IS NOT NULL  AND T2.IMPOTED_FILE_UPDATE_DATE != T1.IMPOTED_FILE_UPDATE_DATE Then '2'
+		ELSE '5'
+		END AS FILE_STATUS_FLG,
+		FILE_KBN
+		FROM T_IMPORTED_FILE_WK T1
+		LEFT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		),
+		diffTmp2 AS( SELECT T1.PUB_NO,T2.IMPORTED_FILE_PATH,T2.IMPOTED_FILE_UPDATE_DATE,
+		CASE
+		WHEN T1.IMPORTED_FILE_PATH IS NULL AND T2.IMPORTED_FILE_PATH IS NOT NULL Then '1'
+		ELSE '5'
+		END AS FILE_STATUS_FLG,
+		FILE_KBN
+		FROM T_IMPORTED_FILE_WK T1
+		RIGHT OUTER JOIN  T_IMPORTED_FILE T2 ON(T1.IMPORTED_FILE_PATH = T2.IMPORTED_FILE_PATH)
+		)
+		SELECT D.IMPORTED_FILE_PATH
+		FROM(
+		SELECT PUB_NO,IMPORTED_FILE_PATH, FILE_KBN FROM diffTmp1 WHERE FILE_STATUS_FLG IN('0','2')
+		) D
+		WHERE D.FILE_KBN  = '0'
+	</select>
+
+
+	  <!-- PUB_NO処理 登録、更新、検索-->
+	  <!-- PUB_NOによる検索-->
+
+	  <!-- T_PUB_NOにデータが存在し、T_SIMILAR_DIAGRAM_SEARCHにデータが存在しない場合 -->
+	  <!-- T_PUB_NO, T_WIRING_DIAGRAM, T_PARTS, T_TERMINAL, T_WIRE　から紐づくデータ削除 -->
+	  <delete id="DeletePubNo" parameterClass="System.String">
+		  DELETE FROM T_PUB_NO  pubNo WHERE
+		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
+		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
+		  AND search.PUB_NO = #pubNo#)
+	  </delete>
+
+	  <delete id="DeleteWiringDiagram" parameterClass="System.String">
+		  DELETE FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
+		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
+		  AND search.PUB_NO = #pubNo#))
+	  </delete>
+
+	  <delete id="DeleteParts" parameterClass="System.String">
+		  WITH del_wire AS(
+		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
+		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
+		  AND search.PUB_NO = #pubNo#)
+		  ))
+		  DELETE FROM T_PARTS WHERE WIRING_DIAGRAM_ID IN (SELECT WIRING_DIAGRAM_ID FROM del_wire)
+	  </delete>
+
+	  <delete id="DeleteTerminal" parameterClass="System.String">
+
+		  WITH del_wire AS(
+		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
+		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
+		  AND search.PUB_NO = #pubNo#)
+
+		  ))
+		  DELETE FROM T_TERMINAL WHERE PARTS_ID IN(
+		  SELECT b.PARTS_ID FROM del_wire a
+		  JOIN T_PARTS b ON (a.WIRING_DIAGRAM_ID = b.WIRING_DIAGRAM_ID))
+	  </delete>
+	  <delete id="DeleteWire" parameterClass="System.String">
+		  WITH del_wire_dia AS(
+		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
+		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
+		  AND search.PUB_NO = #pubNo#))),
+		  temp AS(SELECT c.TERMINAL_ID FROM del_wire_dia a
+		  JOIN T_PARTS b ON (b.WIRING_DIAGRAM_ID = a.WIRING_DIAGRAM_ID)
+		  JOIN T_TERMINAL c ON(b.PARTS_ID = c.PARTS_ID))
+		  DELETE FROM T_WIRE WHERE FROM_TERMINAL_ID IN(SELECT TERMINAL_ID FROM temp) OR TO_TERMINAL_ID IN(SELECT TERMINAL_ID FROM temp)
+	  </delete>
+    <!-- *設計チェック送付Ref_No管理表 登録 -->
+    <update id="InsertDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" >
+      INSERT INTO t_development_cd
+      (development_cd,pub_no,insert_user_id,insert_dt,update_user_id,update_dt)
+      VALUES
+      (#developmentCd#,#pubNo#,#insertUserId#,NOW(),#updateUserId#,NOW())
+    </update>
+
+    <!-- *設計チェック送付Ref_No管理表 更新 -->
+    <update id="UpdateDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" >
+      UPDATE t_development_cd
+      SET
+      pub_no         = #pubNo#,
+      insert_user_id = #insertUserId#,
+      update_user_id = #updateUserId#,
+      update_dt      = NOW()
+      WHERE
+      development_cd   = #developmentCd#
+    </update>
+   
+    <!-- PUB_NO 更新-->
+    <update id="UpdatePubNo" parameterClass="System.String">
+		UPDATE t_pub_no
+		SET
+		old_version_flg     = 1,
+		update_dt           = NOW()
+		WHERE
+		pub_no   = #value#
+	</update>
+    <!-- PUB_NO 登録-->
+    <insert id="InsertPubNo" parameterClass="BT0101.DBClass.CTPubNo">
+		INSERT INTO t_pub_no
+		(pub_no,import_version,old_version_flg,car_model,destination,task,fiscal_year,brand,engine,mission,insert_user_id,insert_dt,update_user_id,update_dt)
+		VALUES
+		(#pubNo#,#importVersion#,#oldVersionFlg#,#carModel#,#destination#,#task#,#fiscalYear#,#brand#,#engine#,#mission#,#insertUserId#,NOW(),#updateUserId#,NOW())
+	</insert>
+    <select id="SelectPubnoMaxImportVersion" parameterClass="System.String" resultClass="int">
+		SELECT COALESCE(MAX(import_version),0) AS max_ver FROM t_pub_no where pub_no=#pubno#
+	</select>
+	<select id="SelectMaxPubNoId" parameterClass="System.String" resultClass="int">
+		  SELECT MAX(pub_no_id) AS max_id FROM t_pub_no
+	</select>
+    
+    <!-- 配線図データ 登録 -->
+    <insert id="InsertWiringDiagram" parameterClass="BT0101.DBClass.CTWiringDiagram" >
+      INSERT INTO t_wiring_diagram
+      (pub_no_id, fig_name, system_title, car_model_specification, wiring_specifications_no, platform, insert_user_id, insert_dt, update_user_id, update_dt)
+      VALUES
+      (#pubNoId#, #figName#, #systemTitle#, #carModelSpecification#, #wiringSpecificationsNo#, #platform#, #insertUserId#, NOW(), #updateUserId#, NOW());
+    </insert>
+	  <select id="SelectMaxWiringDiagramId" parameterClass="System.String" resultClass="int">
+		  SELECT MAX(wiring_diagram_id) AS max_id FROM t_wiring_diagram
+	  </select>
+	  
+
+	  <!-- 画像名称に応じる配線図ID取得 -->
+    <select id="SelectWiringDiagramId" resultClass="int">
+      SELECT wiring_diagram_id
+      FROM t_wiring_diagram
+      WHERE pub_no_id = #pubNoId#
+      AND fig_name = #figName#
+    </select>
+    
+    <!-- 部品データ 登録 -->
+    <insert id="InsertParts" parameterClass="BT0101.DBClass.CTParts" >
+      INSERT INTO t_parts
+      (wiring_diagram_id, wh_parts_name, parts_name, new_parts_cd, hinmei_cd, hinban_5, connector_hinban, wire_name_list, insert_user_id, insert_dt, update_user_id, update_dt)
+      VALUES
+      (#wiringDiagramId#, #whPartsName#, #partsName#, #newPartsCd#, #hinmeiCd#, #hinban5#, #connectorHinban#, #wireNameList#, #insertUserId#, NOW(), #updateUserId#, NOW());
+    </insert>
+    
+    <!-- 端子データ 登録(From,To) -->
+    <insert id="InsertTerminal" parameterClass="BT0101.DBClass.CTTerminal" >
+      INSERT INTO t_terminal
+      (parts_id, terminal_name, pin_no, point_x, point_y, direction, diag_cd, control_name, signal_name, insert_dt, update_dt)
+      VALUES
+      (#partsId#, #terminalName#, #pinNo#, #pointX#, #pointY#, #direction#, #diagCd#, #controlName#, #signalName#, NOW(), NOW());
+    </insert>
+    <select id="SelectTeminalId" resultClass="int">
+      SELECT MAX(terminal_id) FROM t_terminal
+    </select>
+    
+    <!-- PARTS_IDの対象T_PARTSデータ取得用 -->
+    <select id="SelectPartsId" resultClass="HashTable">
+		SELECT t_parts.parts_id as PARTS_ID FROM
+		t_wiring_diagram 
+		INNER JOIN t_parts ON(t_wiring_diagram.wiring_diagram_id=t_parts.wiring_diagram_id)
+		WHERE
+		t_wiring_diagram.fig_name=#figName#
+		AND
+		t_parts.new_parts_cd=#code#
+		AND
+		t_wiring_diagram.pub_no_id = #pubNoId#
+		limit 1
+	</select>
+    <select id="SelectDiagCd" resultClass="HashTable">
+      SELECT m_parts_terminal_info.diag_cd AS DIAG_CD,m_parts_terminal_info.control_name AS CONTROL_NAME,m_parts_terminal_info.signal_name AS SIGNAL_NAME
+      FROM
+      (t_parts inner JOIN m_parts_terminal_info
+      ON t_parts.wh_parts_name=m_parts_terminal_info.wh_parts_name
+      AND t_parts.parts_name=m_parts_terminal_info.parts_name)
+      WHERE
+      t_parts.parts_id=#PARTSID#
+    </select>
+    
+    <!-- 結線データ 登録 -->
+    <insert id="InsertWire" parameterClass="BT0101.DBClass.CTWire" >
+      INSERT INTO t_wire
+      (from_terminal_id, to_terminal_id, svg_line_id, wire_color, insert_user_id, insert_dt, update_user_id, update_dt)
+      VALUES
+      (#fromTerminalId#, #toTerminalId#, #svgLineId#, #wireColor#, NULL, NOW(), NULL, NOW());
+    </insert>
+
+    <!-- エラーメッセージ 登録 -->
+    <insert id="InsertBatchError" parameterClass="BT0101.DBClass.CTBatchError">
+      INSERT INTO t_batch_error
+      (	batch_cd,error_kbn,error_title,	error_detail,start_dt,end_dt,insert_dt,update_dt)
+      VALUES
+      (#batchCd#,#errorKbn#, #errorTitle#, #errorDetail#,#startDt#,#endDt#,NOW(),NOW())
+    </insert>
+      
+</statements>
+</sqlMap>
