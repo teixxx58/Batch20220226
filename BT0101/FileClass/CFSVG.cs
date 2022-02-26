@@ -2,14 +2,8 @@
 using BT0101Batch;
 using Microsoft.Practices.EnterpriseLibrary.Validation;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 
 namespace BT0101.FileClass
@@ -111,7 +105,7 @@ namespace BT0101.FileClass
                 if (!svgFigCodes.Keys.Contains(code))
                 {
                     //csv集めたコードの名称は？？仕様確認する？？
-                    svgFigCodes.Add(code, "ダミー名称");
+                    svgFigCodes.Add(code, "");
                 }
             }
 

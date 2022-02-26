@@ -126,7 +126,7 @@
 	  <!-- T_PUB_NOにデータが存在し、T_SIMILAR_DIAGRAM_SEARCHにデータが存在しない場合 -->
 	  <!-- T_PUB_NO, T_WIRING_DIAGRAM, T_PARTS, T_TERMINAL, T_WIRE　から紐づくデータ削除 -->
 	  <delete id="DeletePubNo" parameterClass="System.String">
-		  DELETE FROM T_PUB_NO  pubNo WHERE
+		  DELETE FROM T_PUB_NO  pubNo WHERE pubNo.PUB_NO = #pubNo# AND
 		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
 		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
 		  AND search.PUB_NO = #pubNo#)
@@ -134,7 +134,7 @@
 
 	  <delete id="DeleteWiringDiagram" parameterClass="System.String">
 		  DELETE FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
-		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE pubNo.PUB_NO = #pubNo# AND
 		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
 		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
 		  AND search.PUB_NO = #pubNo#))
@@ -143,7 +143,7 @@
 	  <delete id="DeleteParts" parameterClass="System.String">
 		  WITH del_wire AS(
 		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
-		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE pubNo.PUB_NO = #pubNo# AND
 		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
 		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
 		  AND search.PUB_NO = #pubNo#)
@@ -155,7 +155,7 @@
 
 		  WITH del_wire AS(
 		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
-		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE pubNo.PUB_NO = #pubNo# AND
 		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
 		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
 		  AND search.PUB_NO = #pubNo#)
@@ -168,7 +168,7 @@
 	  <delete id="DeleteWire" parameterClass="System.String">
 		  WITH del_wire_dia AS(
 		  SELECT WIRING_DIAGRAM_ID FROM T_WIRING_DIAGRAM WHERE PUB_NO_ID IN (
-		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE
+		  SELECT PUB_NO_ID FROM T_PUB_NO  pubNo WHERE pubNo.PUB_NO = #pubNo# AND
 		  NOT EXISTS (SELECT * FROM T_SIMILAR_DIAGRAM_SEARCH search
 		  WHERE search.PUB_NO = pubNo.PUB_NO AND search.IMPORT_VERSION = pubNo.IMPORT_VERSION
 		  AND search.PUB_NO = #pubNo#))),
@@ -178,12 +178,12 @@
 		  DELETE FROM T_WIRE WHERE FROM_TERMINAL_ID IN(SELECT TERMINAL_ID FROM temp) OR TO_TERMINAL_ID IN(SELECT TERMINAL_ID FROM temp)
 	  </delete>
     <!-- *設計チェック送付Ref_No管理表 登録 -->
-    <update id="InsertDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" >
+    <insert id="InsertDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" >
       INSERT INTO t_development_cd
       (development_cd,pub_no,insert_user_id,insert_dt,update_user_id,update_dt)
       VALUES
       (#developmentCd#,#pubNo#,#insertUserId#,NOW(),#updateUserId#,NOW())
-    </update>
+    </insert>
 
     <!-- *設計チェック送付Ref_No管理表 更新 -->
     <update id="UpdateDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" >
@@ -196,7 +196,11 @@
       WHERE
       development_cd   = #developmentCd#
     </update>
-   
+	  <!-- *設計チェック送付Ref_No管理表 検索 -->
+	  <select id="SelectDevelopmentCd" parameterClass="BT0101.DBClass.CTDevelopmentCd" resultClass="int">
+		  SELECT count(*) AS cnt FROM t_development_cd WHERE development_cd = #developmentCd#
+	  </select>
+	  
     <!-- PUB_NO 更新-->
     <update id="UpdatePubNo" parameterClass="System.String">
 		UPDATE t_pub_no

@@ -1,8 +1,7 @@
 ﻿using BT0101.DBClass;
+using BT0101.FileClass;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.IO;
 
 namespace BT0101Batch
 {
@@ -72,7 +71,7 @@ namespace BT0101Batch
                     {
                         swich = true;
                         //エラーが存在する場合、1件目のエラー内容
-                        reacord.errorTitle = rec.errorTitle + "他";
+                        reacord.errorTitle = "【Pub. No.:" + CFBase.PUBNO + "】" + rec.errorTitle + "他";
                         reacord.errorKbn = "01";
                     }
                     reacord.errorDetail += rec.errorDetail + "\r\n"; 
@@ -81,7 +80,7 @@ namespace BT0101Batch
                 if (errCnt < 1)
                 {
                     reacord.errorKbn = "02";
-                    reacord.errorTitle = errorMessages[0].errorTitle + "他";
+                    reacord.errorTitle = "【Pub. No.:" + CFBase.PUBNO + "】" + errorMessages[0].errorTitle + "他";
                 }
                 reacord.startDt = dtPubNoBatchStart;
                 reacord.endDt = dtPubNoBatchEnd;

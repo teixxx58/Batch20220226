@@ -1,34 +1,17 @@
 ﻿using BT0101.DBClass;
 using BT0101Batch;
+using Microsoft.Practices.EnterpriseLibrary.Validation;
 using NPOI.SS.UserModel;
 using System;
 using System.Collections.Generic;
-using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace BT0101.FileClass
 {
-	class CFXLS : CFBase
+    class CFXLS : CFBase
 	{
-		private bool isRefNoTableTargetFile = false;
-		private bool isPartsTargetFile = false;
-
-		private bool IsImportTargetFile()
-		{
-			// refNoTableTargetFile と partsTargetFile を走査する。
-			isRefNoTableTargetFile = true;
-			isPartsTargetFile = true;
-
-			if (!isRefNoTableTargetFile && !isPartsTargetFile)
-			{
-				return true;
-			}
-			return false;
-		}
 
 		/// <summary>
 		/// 部品名称(W/H図面)・コネクタ品番の取得
@@ -120,12 +103,13 @@ namespace BT0101.FileClass
 			{
 				idxRow++;
 				if (sheet.GetRow(idxRow) == null) break;
-				
+
 				var row = sheet.GetRow(idxRow);
 				var cell = row.GetCell(0) ;
 				var cellValue = cell.StringCellValue;
+				if (string.IsNullOrEmpty(cellValue)) break;
 
-				if(!dic.Keys.Contains(cellValue) && !string.IsNullOrEmpty(cellValue))
+				if (!dic.Keys.Contains(cellValue) && !string.IsNullOrEmpty(cellValue))
 					dic.Add(cellValue, row.GetCell(3).StringCellValue);
 			}
 
@@ -137,7 +121,7 @@ namespace BT0101.FileClass
 				}
 				else
 				{
-					rec.wireNameList = "ダミーWireNameList";
+					rec.wireNameList = "";
 					BatchBase.AppendErrMsg("WNG_DATA_LOSS", "ファイル:" + wireNameListFile + "  Code:" + rec.newPartsCd);
 					CLogger.Logger("WNG_DATA_LOSS", "ファイル:" + wireNameListFile + "   Code:" + rec.newPartsCd);
 				}
@@ -153,7 +137,7 @@ namespace BT0101.FileClass
 				{
 					return;
 				}
-				string[] targetFiles = Directory.GetFiles(refNoTablePath, "*設計チェック送付Ref_No管理表.xls");
+				string[] targetFiles = Directory.GetFiles(refNoTablePath, "*");
 
 				foreach (string file in targetFiles)
 				{
@@ -176,32 +160,49 @@ namespace BT0101.FileClass
 					record.insertUserId = null;
 					record.updateUserId = null;
 
-					int idxRow = 1;
-					var row = sheet.GetRow(idxRow);
-					var cell_2 = row.GetCell(2);    // 開発No.(号口No.)
-					var cell_3 = row.GetCell(3);    // Pub. No.
-					string cellValue = cell_2.StringCellValue;
-					while (cellValue.Length != 0)
+					int idxRow = 0;
+					while (true)
 					{
-						cell_3 = row.GetCell(3);
+						idxRow++;
+						if (sheet.GetRow(idxRow) == null) break;
+						var row = sheet.GetRow(idxRow);
+						var cell_2 = row.GetCell(2);    // 開発No.(号口No.)
+						var cell_3 = row.GetCell(3);    // Pub. No.
+						string cellValue = cell_2.StringCellValue;
+						if (string.IsNullOrEmpty(cellValue)) break;
+
 						record.pubNo = cell_3.StringCellValue;	// Pub. No.
 
 						cellValue = Regex.Replace(cell_2.StringCellValue, @"[\s]+", "");   // 開発No.(号口No.)
 						var regex = new Regex(@"[\(（].*?[\)）]");
 						record.developmentCd = regex.Replace(cellValue, "");
 
+						var partsValidator = ValidationFactory.CreateValidator<CTDevelopmentCd>();
+
+						var partsValidateResult = partsValidator.Validate(record);
+						if (!partsValidateResult.IsValid)
+						{
+							foreach (var partsValidationResult in partsValidateResult)
+							{
+								//ログ出力
+								CLogger.Logger(partsValidationResult.Message);
+								BatchBase.AppendErrMsg("Validate_Hannyou", partsValidationResult.Message);
+							}
+
+							continue;
+						}
+
 						// T_DEVELOPMENT_CD 更新
-						int cnt = mapper.Update("UpdateDevelopmentCd", record);
+						int cnt = mapper.QueryForObject<int>("SelectDevelopmentCd", record);
 						if (cnt == 0)
 						{
 							// T_DEVELOPMENT_CD 登録
-							var cntInsert = mapper.Insert("InsertDevelopmentCd", record);
+							mapper.Insert("InsertDevelopmentCd", record);
+                        }
+                        else
+                        {
+							mapper.Update("UpdateDevelopmentCd", record);
 						}
-
-						row = sheet.GetRow(++idxRow);
-						cell_2 = row.GetCell(2);
-						cellValue = cell_2.StringCellValue;
-
 					}
 				}
 			}

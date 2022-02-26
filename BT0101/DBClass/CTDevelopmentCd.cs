@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using BT0101Batch;
+using CsvHelper.Configuration.Attributes;
+using System.ComponentModel.DataAnnotations;
 
 namespace BT0101.DBClass
 {
@@ -21,11 +20,20 @@ namespace BT0101.DBClass
             get { return _developmentCdId; }
             set { _developmentCdId = value; }
         }
+
+        [Name("開発No.(号口No.)")]
+        [Required(ErrorMessageResourceName = "Validate_Required",
+                               ErrorMessageResourceType = typeof(Messages))]
+        [MaxLength(10, ErrorMessageResourceName = "Validate_MaxLength",
+                              ErrorMessageResourceType = typeof(Messages))]
         public string developmentCd
         {
             get { return _developmentCd; }
             set { _developmentCd = value; }
         }
+        [Name("Pub.No.")]
+        [Required(ErrorMessageResourceName = "Validate_Required",
+                              ErrorMessageResourceType = typeof(Messages))]
         public string pubNo
         {
             get { return _pubNo; }

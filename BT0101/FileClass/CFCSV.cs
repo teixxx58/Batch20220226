@@ -7,7 +7,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Configuration;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -141,9 +140,9 @@ namespace BT0101.FileClass
                             Hashtable diag = mapper.QueryForObject<Hashtable>("SelectDiagCd", terminal.partsId);
                             if (diag != null)
                             {
-                                terminal.diagCd = diag["diag_cd"].ToString();
-                                terminal.controlName = diag["control_name"].ToString();
-                                terminal.signalName = diag["signal_name"].ToString();
+                                terminal.diagCd = diag["diag_cd"] == null ? "": diag["diag_cd"].ToString();
+                                terminal.controlName = diag["control_name"] == null ? "" : diag["control_name"].ToString();
+                                terminal.signalName = diag["signal_name"] == null ? "" : diag["signal_name"].ToString();
                             }
                             // FROM端子データ登録
                             mapper.Insert("InsertTerminal", terminal);
@@ -156,7 +155,7 @@ namespace BT0101.FileClass
                             Hashtable partIdTo = GetPartsId(PUBNO, figName, PUBNO_ID, csv.codeTo);
                             if (partIdTo != null && !string.IsNullOrEmpty(partIdTo["parts_id"].ToString()))
                             {
-                                Hashtable partId = GetPartsId(PUBNO, figName, PUBNO_ID, csv.codeTo);
+                                terminalTo.partsId = (int)partIdTo["parts_id"];
 
                                 terminalTo.terminalName = csv.terminalNameTo;
                                 terminalTo.pinNo = csv.pinTo;
@@ -169,9 +168,9 @@ namespace BT0101.FileClass
                                 Hashtable diag = mapper.QueryForObject<Hashtable>("SelectDiagCd", terminalTo.partsId);
                                 if (diag != null)
                                 {
-                                    terminalTo.diagCd = diag["diag_cd"].ToString();
-                                    terminalTo.controlName = diag["control_name"].ToString();
-                                    terminalTo.signalName = diag["signal_name"].ToString();
+                                    terminalTo.diagCd = diag["diag_cd"] == null ? "" : diag["diag_cd"].ToString();
+                                    terminalTo.controlName = diag["control_name"] == null ? "" : diag["control_name"].ToString();
+                                    terminalTo.signalName = diag["signal_name"] == null ? "" : diag["signal_name"].ToString();
                                 }
                                 mapper.Insert("InsertTerminal", terminalTo);
                                 toId = mapper.QueryForObject<int>("SelectTeminalId",null);

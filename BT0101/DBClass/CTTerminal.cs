@@ -1,16 +1,7 @@
-﻿using CsvHelper.Configuration.Attributes;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System;
 
 namespace BT0101.DBClass
 {
-    [System.Diagnostics.DebuggerDisplay("部品ID:{partsId},端子名称:{terminalName}," +
-        "ピン番号:{pinNo},接続点X{pointX},接続点Y{pointY},接続方向{direction}," +
-        "ダイアグコード{diagCd},制御名{controlName},信号名{signalName}")]
     public class CTTerminal
     {
         private int _terminalId;
@@ -86,29 +77,6 @@ namespace BT0101.DBClass
         {
             get { return _updateUserId; }
             set { _updateUserId = value; }
-        }
-
-        public override string ToString()
-        {
-            return string.Format("部品ID:{0}" +
-                ",端子名称:{1}," +
-                "ピン番号:{2}," +
-                "接続点X:{3}," +
-                "接続点Y:{4}," +
-                "接続方向:{5}," +
-                "ダイアグコード:{6}," +
-                "制御名:{7}," +
-                "信号名:{8}",
-                partsId,
-                terminalName,
-                pinNo,
-                pointX,
-                pointY,
-                direction,
-                diagCd,
-                controlName,
-                signalName
-                );
         }
     }
 }

@@ -1,13 +1,9 @@
 ﻿using BT0101.DBClass;
 using BT0101.FileClass;
-using Microsoft.Practices.EnterpriseLibrary.Validation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 
 namespace BT0101Batch
 {
@@ -30,7 +26,6 @@ namespace BT0101Batch
             try
             {
                 // バッチの実行開始日時
-                BatchBase.AppendErrMsg("INFO_BATCHSTART", "");
                 dtPubNoBatchStart = DateTime.Now;
                 CFBase.SetMapper(db);
 
@@ -64,9 +59,9 @@ namespace BT0101Batch
 
                 if(pubNos == null || pubNos.Count < 1)
                 {
-                    CLogger.Logger("INFO_BATCHEND", "");
-                    BatchBase.AppendErrMsg("INFO_BATCHEND","");
                     BatchBase.dtPubNoBatchEnd = DateTime.Now;
+                    BatchBase.AppendErrMsg("INFO_NO_MODIFIED_FILE", "対象");
+                    CLogger.Logger("INFO_NO_MODIFIED_FILE", "対象");
                     //終了
                     WriteErrMsg_DB();
                     return true;
@@ -142,20 +137,12 @@ namespace BT0101Batch
 
                     // 次のPUBNOへに進む
                 }
-
-                ////////////////////////////////////////////////////
-                /// ４．エラーメッセージ書き込み処理
-                ////////////////////////////////////////////////////
-                BatchBase.WriteErrMsg_DB();
-                db.Commit();
             }
             catch (Exception ex)
             {
                 CLogger.Err(ex);
-                BatchBase.WriteErrMsg_DB();
                 return false;
             }
-            CLogger.Logger("INFO_BATCHEND");
             return true;
         }
     }

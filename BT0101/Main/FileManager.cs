@@ -1,14 +1,10 @@
 ﻿using BT0101.DBClass;
-using IBatisNet.DataMapper;
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace BT0101Batch
 {
@@ -50,7 +46,7 @@ namespace BT0101Batch
         private static string xmlPartsPattern = Regex.Escape(pubNoPartsXlsDir) + @".*\-Parts\.xls$";
         private static string wireNameListPattern = Regex.Escape(pubNoWireNameListDir) + @".*\-WireNameList\.xls$";
         private static string kadaiFileDirPattern = Regex.Escape(kadaiFileDir) + @".*\.*"; 
-        private static string refNoCheckPattern = Regex.Escape(sekkeiCheckFileDir) + @".*設計チェック送付Ref No管理表\.xls$";
+        private static string refNoCheckPattern = Regex.Escape(sekkeiCheckFileDir) + @".*設計チェック送付Ref_No管理表\.xls$";
 
         //ファイルステータス 0:新規 1:削除 2:更新
         private const string STATUS_INSERT_FLG = "0";

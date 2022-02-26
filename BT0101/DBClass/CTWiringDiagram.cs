@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BT0101.DBClass
+﻿namespace BT0101.DBClass
 {
     class CTWiringDiagram
     {
@@ -62,22 +56,6 @@ namespace BT0101.DBClass
         {
             get { return _updateUserId; }
             set { _updateUserId = value; }
-        }
-        public override string ToString()
-        {
-            return string.Format("pubNoId:[{0}]," +
-                "figName:[{1}]," +
-                "systemTitle:[{2}]," +
-                "carModelSpecification:[{3}]," +
-                "wiringSpecificationsNo:[{4}]," +
-                "platform:[{5}],",
-                pubNoId,
-                figName,
-                systemTitle,
-                carModelSpecification,
-                wiringSpecificationsNo,
-                platform
-                );
         }
     }
 }

@@ -1,10 +1,5 @@
 ﻿using BT0101Batch;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BT0101.DBClass
 {
@@ -33,7 +28,8 @@ namespace BT0101.DBClass
             get { return _toTerminalId; }
             set { _toTerminalId = value; }
         }
-        [RegularExpression("^[0-9]+$", ErrorMessageResourceName = "Validate_Regx", ErrorMessageResourceType = typeof(Messages))]
+        [RegularExpression("^[0-9]+$", ErrorMessageResourceName = "Validate_Regx", 
+            ErrorMessageResourceType = typeof(Messages))]
         public int svgLineId
         {
             get { return _svgLineId; }
@@ -53,19 +49,6 @@ namespace BT0101.DBClass
         {
             get { return _updateUserId; }
             set { _updateUserId = value; }
-        }
-
-        public override string ToString()
-        {
-            return string.Format("FROM端子ID:{0}," +
-                "TO端子ID:{1}," +
-                "SVG結線ID:{2}," +
-                "線色:{3}",
-                fromTerminalId,
-                toTerminalId,
-                svgLineId,
-                wireColor
-                );
         }
     }
 }

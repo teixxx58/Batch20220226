@@ -1,5 +1,4 @@
-﻿using BT0101;
-using log4net;
+﻿using log4net;
 using System;
 using System.Reflection;
 
@@ -42,7 +41,7 @@ namespace BT0101Batch
             }
             else
             {
-                CLogger.GetLogger().Error(msgID);
+                CLogger.GetLogger().Warn(msgID);
             }
 
         }

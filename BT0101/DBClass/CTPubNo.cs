@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace BT0101.DBClass
+﻿namespace BT0101.DBClass
 {
     class CTPubNo
     {
@@ -86,30 +80,6 @@ namespace BT0101.DBClass
         {
             get { return _updateUserId; }
             set { _updateUserId = value; }
-        }
-        public override string ToString()
-        {
-            return string.Format("pubNo:[{0}]," +
-                "importVersion:[{1}]," +
-                "oldVersionFlg:[{2}]," +
-                "carModel:[{3}]," +
-                "destination:[{4}]," +
-                "task:[{5}]," +
-                "fiscalYear:[{6}]," +
-                "brand:[{7}]," +
-                "engine:[{8}]," +
-                "mission:[{9}]", 
-                pubNo,
-                importVersion,
-                oldVersionFlg,
-                carModel,
-                destination,
-                task,
-                fiscalYear,
-                brand,
-                engine,
-                mission
-                );
         }
     }
 }

@@ -1,0 +1,519 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<sqlMap namespace="BT0201Batch"
+        xmlns="http://ibatis.apache.org/mapping"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
+
+  <statements>
+	  <!-- 類似回路検索　検索 -->
+	  <select id="SelectSimilarDiagramSearchId" resultClass="HashTable">
+		  SELECT similar_diagram_search_id
+		  FROM t_similar_diagram_search
+		  WHERE status_cd = '01'
+	  </select>
+
+
+	  <!-- 類似回路検索(開始) 更新 -->
+	  <update id="UpdateStartSearchStatus" parameterClass="BT0201.DBClass.CTSimilarDiagramSearch" >
+		  UPDATE t_similar_diagram_search
+		  SET
+		  status_cd      = #statusCd#,
+		  start_dt       =#startDt#,
+		  end_dt         = null,
+		  update_user_id = #updateUserId#,
+		  update_dt      = NOW()
+		  WHERE
+		  similar_diagram_search_id   = #similarDiagramSearchId#
+	  </update>
+
+	  <!-- 類似回路検索(終了) 更新 -->
+	  <update id="UpdateEndSearchStatus" parameterClass="BT0201.DBClass.CTSimilarDiagramSearch" >
+		  UPDATE t_similar_diagram_search
+		  SET
+		  status_cd      = #statusCd#,
+		  end_dt         = #endDt#,
+		  update_user_id = #updateUserId#,
+		  update_dt      = NOW()
+		  WHERE
+		  similar_diagram_search_id   = #similarDiagramSearchId#
+	  </update>    
+    <!-- 類似度計算情報 登録 -->
+    <statement id="CalculateSimilarWireDiagram" parameterClass="Hashtable" resultClass="HashTable" >
+	  <![CDATA[ 
+		with parts_terminal as (
+		select
+		g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.wh_parts_name
+		, g.new_parts_cd
+		, g.terminal_id
+		, g.terminal_name
+		, g.pin_no
+		, g.wiring_diagram_id
+		from
+		(
+		select
+		similar_diagram.similar_diagram_search_id
+		, similar_diagram.wire_list_pub_no_id
+		, term.terminal_id
+		, parts.wh_parts_name
+		, parts.new_parts_cd
+		, term.terminal_name
+		, term.pin_no
+		, wirefig.wiring_diagram_id
+		from
+		t_similar_diagram_search similar_diagram
+		inner join t_pub_no pubno
+		on ( similar_diagram.pub_no = pubno.pub_no and similar_diagram.import_version = pubno.import_version          )
+		inner join t_wiring_diagram wirefig
+		on (pubno.pub_no_id = wirefig.pub_no_id and similar_diagram.fig_name = wirefig.fig_name)
+		inner join t_parts parts
+		on (parts.wiring_diagram_id = wirefig.wiring_diagram_id)
+		inner join t_terminal term
+		on (parts.parts_id = term.parts_id)
+		where
+		similar_diagram.similar_diagram_search_id = #search_id#
+		) g
+		group by
+		g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.terminal_id
+		, g.wh_parts_name
+		, g.new_parts_cd
+		, g.terminal_name
+		, g.pin_no
+		, g.wiring_diagram_id
+		)
+		, from_to as (
+		select
+		row_number() over () as row_num
+		, g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.wiring_diagram_id
+		, g.wire_id
+		, g.from_wh_parts_name
+		, g.from_parts_code
+		, g.from_terminal_name
+		, g.from_pin_no
+		, g.to_wh_parts_name
+		, g.to_parts_code
+		, g.to_terminal_name
+		, g.to_pin_no
+		, g.wire_color
+		from
+		(
+		select
+		fromt.similar_diagram_search_id as similar_diagram_search_id
+		, fromt.wire_list_pub_no_id as wire_list_pub_no_id
+		, fromt.wiring_diagram_id
+		, fromt.wire_id as wire_id
+		, fromt.wh_parts_name as from_wh_parts_name
+		, fromt.new_parts_cd as from_parts_code
+		, fromt.terminal_name as from_terminal_name
+		, fromt.pin_no as from_pin_no
+		, tot.wh_parts_name as to_wh_parts_name
+		, tot.new_parts_cd as to_parts_code
+		, tot.terminal_name as to_terminal_name
+		, tot.pin_no as to_pin_no
+		, col.wire_color
+		from
+		(
+		(
+		select
+		wire.wire_id
+		, wire.from_terminal_id
+		, pt.similar_diagram_search_id
+		, pt.wire_list_pub_no_id
+		, pt.wiring_diagram_id
+		, pt.wh_parts_name
+		, pt.new_parts_cd
+		, pt.terminal_name
+		, pt.pin_no
+		from
+		t_wire wire
+		inner join parts_terminal pt
+		on (wire.from_terminal_id = pt.terminal_id)
+		) fromt
+		inner join (
+		select
+		wire.wire_id
+		, wire.to_terminal_id
+		, pt.similar_diagram_search_id
+		, pt.wire_list_pub_no_id
+		, pt.wiring_diagram_id
+		, pt.wh_parts_name
+		, pt.new_parts_cd
+		, pt.terminal_name
+		, pt.pin_no
+		from
+		t_wire wire
+		inner join parts_terminal pt
+		on (wire.to_terminal_id = pt.terminal_id)
+		) tot
+		on (
+		fromt.wire_id = tot.wire_id
+		and fromt.similar_diagram_search_id = tot.similar_diagram_search_id
+		and fromt.wire_list_pub_no_id = tot.wire_list_pub_no_id
+		and fromt.wiring_diagram_id = tot.wiring_diagram_id
+		)
+		inner join t_wire col
+		on (fromt.wire_id = col.wire_id)
+		)
+		) g
+		group by
+		g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.wiring_diagram_id
+		, g.wire_id
+		, g.from_wh_parts_name
+		, g.from_parts_code
+		, g.from_terminal_name
+		, g.from_pin_no
+		, g.to_wh_parts_name
+		, g.to_parts_code
+		, g.to_terminal_name
+		, g.to_pin_no
+		, g.wire_color
+		)
+		, line_info as (
+		select
+		row_number() over () as row_num
+		, g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.from_wh_parts_name
+		, g.from_terminal_name
+		, g.from_pin_no
+		, g.from_parts_code
+		, g.to_wh_parts_name
+		, g.to_terminal_name
+		, g.to_pin_no
+		, g.to_parts_code
+		, g.wire_color
+		, g.wire_list_detail_id
+		from
+		(
+		select
+		similar_diagram.similar_diagram_search_id
+		, wiredetail.wire_list_pub_no_id
+		, wiredetail.from_wh_parts_name
+		, wiredetail.from_terminal_name
+		, wiredetail.from_pin_no
+		, wiredetail.from_parts_code
+		, wiredetail.to_wh_parts_name
+		, wiredetail.to_terminal_name
+		, wiredetail.to_pin_no
+		, wiredetail.to_parts_code
+		, wiredetail.wire_color
+		, wiredetail.wire_list_detail_id
+		from
+		t_similar_diagram_search similar_diagram
+		inner join t_wire_list_pub_no wirepubno
+		on (similar_diagram.wire_list_pub_no_id = wirepubno.wire_list_pub_no_id)
+		inner join t_wire_list_detail wiredetail
+		on (wirepubno.wire_list_pub_no_id = wiredetail.wire_list_pub_no_id)
+		where
+		similar_diagram.similar_diagram_search_id = #search_id#
+		) g
+		group by
+		g.similar_diagram_search_id
+		, g.wire_list_pub_no_id
+		, g.from_wh_parts_name
+		, g.from_terminal_name
+		, g.from_pin_no
+		, g.from_parts_code
+		, g.to_wh_parts_name
+		, g.to_terminal_name
+		, g.to_pin_no
+		, g.to_parts_code
+		, g.wire_color
+		, g.wire_list_detail_id
+		)
+		, similar_for as (
+		select
+		ttt.old_row_num
+		, ttt.info_row_num
+		, ttt.similar_diagram_search_id
+		, ttt.wire_id
+		, ttt.wiring_diagram_id
+		, ttt.wire_list_detail_id
+		, 100 - (
+		ttt.from_parts_name_diff_point + ttt.from_pin_no_diff_point + ttt.from_terminal_name_diff_point + ttt
+		.from_parts_code_diff_point + ttt.to_parts_name_diff_point + ttt.to_pin_no_diff_point + ttt.to_terminal_name_diff_point
+		+ ttt.to_parts_code_diff_point + ttt.wire_color_diff_point
+		) as similar_point
+		, 0 as reverse_flg
+		, ttt.from_parts_name_diff_flg
+		, ttt.from_pin_no_diff_flg
+		, ttt.from_terminal_name_diff_flg
+		, ttt.from_parts_code_diff_flg
+		, ttt.to_parts_name_diff_flg
+		, ttt.to_pin_no_diff_flg
+		, ttt.to_terminal_name_diff_flg
+		, ttt.to_parts_code_diff_flg
+		, ttt.wire_color_diff_flg
+		from
+		(
+		select
+		tt.old_row_num
+		, tt.info_row_num
+		, tt.similar_diagram_search_id
+		, tt.wire_id
+		, tt.wire_list_detail_id
+		, tt.wiring_diagram_id
+		, tt.from_parts_name_diff_flg
+		, tt.from_pin_no_diff_flg
+		, tt.from_terminal_name_diff_flg
+		, tt.from_parts_code_diff_flg
+		, tt.to_parts_name_diff_flg
+		, tt.to_pin_no_diff_flg
+		, tt.to_terminal_name_diff_flg
+		, tt.to_parts_code_diff_flg
+		, tt.wire_color_diff_flg
+		, case when from_parts_name_diff_flg != 1 then 0 else #from_parts_name_point# end as from_parts_name_diff_point
+		, case when from_pin_no_diff_flg != 1 then 0 else #from_pin_no_point# end as from_pin_no_diff_point
+		, case when from_terminal_name_diff_flg != 1 then 0 else #from_terminal_name_point# end as from_terminal_name_diff_point
+		, case when from_parts_code_diff_flg != 1 then 0 else #from_parts_code_point# end as from_parts_code_diff_point
+		, case when to_parts_name_diff_flg != 1 then 0 else #to_parts_name_point# end as to_parts_name_diff_point
+		, case when to_pin_no_diff_flg != 1 then 0 else #to_pin_no_point# end as to_pin_no_diff_point
+		, case when to_terminal_name_diff_flg != 1 then 0 else #to_terminal_name_point# end as to_terminal_name_diff_point
+		, case when to_parts_code_diff_flg != 1 then 0 else #to_parts_code_point# end as to_parts_code_diff_point
+		, case when wire_color_diff_flg != 1 then 0 else #wirecolor_point# end as wire_color_diff_point
+		from
+		(
+		select
+		ft.row_num as old_row_num
+		, line.row_num as info_row_num
+		, line.similar_diagram_search_id
+		, ft.wiring_diagram_id
+		, ft.wire_id
+		, line.wire_list_pub_no_id
+		, line.wire_list_detail_id
+		, case when regexp_split_to_array(line.from_wh_parts_name, ',') && regexp_split_to_array(ft.from_wh_parts_name, ',') then 0 else 1 end as from_parts_name_diff_flg
+		, case when regexp_split_to_array(line.from_pin_no, ',') && regexp_split_to_array(ft.from_pin_no, ',') then 0 else 1 end as from_pin_no_diff_flg
+		, case when regexp_split_to_array(line.from_terminal_name, ',') && regexp_split_to_array(ft.from_terminal_name, ',') then 0 else 1 end as from_terminal_name_diff_flg
+		, case when regexp_split_to_array(line.from_parts_code, ',') && regexp_split_to_array(ft.from_parts_code, ',') then 0 else 1 end as from_parts_code_diff_flg
+		, case when regexp_split_to_array(line.to_wh_parts_name, ',') && regexp_split_to_array(ft.to_wh_parts_name, ',') then 0 else 1 end as to_parts_name_diff_flg
+		, case when regexp_split_to_array(line.to_pin_no, ',') && regexp_split_to_array(ft.to_pin_no, ',') then 0 else 1 end as to_pin_no_diff_flg
+		, case when regexp_split_to_array(line.to_terminal_name, ',') && regexp_split_to_array(ft.to_terminal_name, ',') then 0 else 1 end as to_terminal_name_diff_flg
+		, case when regexp_split_to_array(line.to_parts_code, ',') && regexp_split_to_array(ft.to_parts_code, ',') then 0 else 1 end as to_parts_code_diff_flg
+		, case when regexp_split_to_array(line.wire_color, ',') && regexp_split_to_array(ft.wire_color, ',') then 0 else 1 end as wire_color_diff_flg
+		from line_info line
+		right outer join from_to ft
+		on (line.similar_diagram_search_id = ft.similar_diagram_search_id)
+		) tt
+		) ttt
+		)
+		, similar_rev as (
+		select
+		ttt.old_row_num
+		, ttt.info_row_num
+		, ttt.similar_diagram_search_id
+		, ttt.wire_id
+		, ttt.wiring_diagram_id
+		, ttt.wire_list_detail_id
+		, 100 - (
+		ttt.from_parts_name_diff_point + ttt.from_pin_no_diff_point + ttt.from_terminal_name_diff_point + ttt
+		.from_parts_code_diff_point + ttt.to_parts_name_diff_point + ttt.to_pin_no_diff_point + ttt.to_terminal_name_diff_point
+		+ ttt.to_parts_code_diff_point + ttt.wire_color_diff_point
+		) as similar_point
+		, 1 as reverse_flg
+		, ttt.from_parts_name_diff_flg
+		, ttt.from_pin_no_diff_flg
+		, ttt.from_terminal_name_diff_flg
+		, ttt.from_parts_code_diff_flg
+		, ttt.to_parts_name_diff_flg
+		, ttt.to_pin_no_diff_flg
+		, ttt.to_terminal_name_diff_flg
+		, ttt.to_parts_code_diff_flg
+		, ttt.wire_color_diff_flg
+		from
+		(
+		select
+		tt.old_row_num
+		, tt.info_row_num
+		, tt.similar_diagram_search_id
+		, tt.wire_id
+		, tt.wire_list_detail_id
+		, tt.wiring_diagram_id
+		, tt.from_parts_name_diff_flg
+		, tt.from_pin_no_diff_flg
+		, tt.from_terminal_name_diff_flg
+		, tt.from_parts_code_diff_flg
+		, tt.to_parts_name_diff_flg
+		, tt.to_pin_no_diff_flg
+		, tt.to_terminal_name_diff_flg
+		, tt.to_parts_code_diff_flg
+		, tt.wire_color_diff_flg
+		, case when from_parts_name_diff_flg != 1 then 0 else #from_parts_name_point# end as from_parts_name_diff_point
+		, case when from_pin_no_diff_flg != 1 then 0 else #from_pin_no_point# end as from_pin_no_diff_point
+		, case when from_terminal_name_diff_flg != 1 then 0 else #from_terminal_name_point# end as from_terminal_name_diff_point
+		, case when from_parts_code_diff_flg != 1 then 0 else #from_parts_code_point# end as from_parts_code_diff_point
+		, case when to_parts_name_diff_flg != 1 then 0 else #to_parts_name_point# end as to_parts_name_diff_point
+		, case when to_pin_no_diff_flg != 1 then 0 else #to_pin_no_point# end as to_pin_no_diff_point
+		, case when to_terminal_name_diff_flg != 1 then 0 else #to_terminal_name_point# end as to_terminal_name_diff_point
+		, case when to_parts_code_diff_flg != 1 then 0 else #to_parts_code_point# end as to_parts_code_diff_point
+		, case when wire_color_diff_flg != 1 then 0 else #wirecolor_point# end as wire_color_diff_point
+		from
+		(
+		select
+		ft.row_num as old_row_num
+		, line.row_num as info_row_num
+		, line.similar_diagram_search_id
+		, ft.wiring_diagram_id
+		, ft.wire_id
+		, line.wire_list_pub_no_id
+		, line.wire_list_detail_id
+		, case when regexp_split_to_array(line.from_wh_parts_name, ',') && regexp_split_to_array(ft.to_wh_parts_name, ',') then 0 else 1 end as from_parts_name_diff_flg
+		, case when regexp_split_to_array(line.from_pin_no, ',') && regexp_split_to_array(ft.to_pin_no, ',') then 0 else 1 end as from_pin_no_diff_flg
+		, case when regexp_split_to_array(line.from_terminal_name, ',') && regexp_split_to_array(ft.to_terminal_name, ',') then 0 else 1 end as from_terminal_name_diff_flg
+		, case when regexp_split_to_array(line.from_parts_code, ',') && regexp_split_to_array(ft.to_parts_code, ',') then 0 else 1 end as from_parts_code_diff_flg
+		, case when regexp_split_to_array(line.to_wh_parts_name, ',') && regexp_split_to_array(ft.from_wh_parts_name, ',') then 0 else 1 end as to_parts_name_diff_flg
+		, case when regexp_split_to_array(line.to_pin_no, ',') && regexp_split_to_array(ft.from_pin_no, ',') then 0 else 1 end as to_pin_no_diff_flg
+		, case when regexp_split_to_array(line.to_terminal_name, ',') && regexp_split_to_array(ft.from_terminal_name, ',') then 0 else 1 end as to_terminal_name_diff_flg
+		, case when regexp_split_to_array(line.to_parts_code, ',') && regexp_split_to_array(ft.from_parts_code, ',') then 0 else 1 end as to_parts_code_diff_flg
+		, case when regexp_split_to_array(line.wire_color, ',') && regexp_split_to_array(ft.wire_color, ',') then 0 else 1 end as wire_color_diff_flg
+		from line_info line
+		right outer join from_to ft
+		on (line.similar_diagram_search_id = ft.similar_diagram_search_id)
+		) tt
+		) ttt
+		)
+		, similar_ext as (
+		select
+		forw.old_row_num
+		, forw.info_row_num
+		, forw.similar_diagram_search_id
+		, forw.wire_id
+		, forw.wiring_diagram_id
+		, forw.wire_list_detail_id
+		, case when forw.similar_point > res.similar_point then forw.similar_point else res.similar_point end as similar_point
+		, case when forw.similar_point > res.similar_point then forw.reverse_flg else res.reverse_flg end as reverse_flg
+		, case when forw.similar_point > res.similar_point then forw.from_parts_name_diff_flg else res.from_parts_name_diff_flg end as from_parts_name_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.from_pin_no_diff_flg else res.from_pin_no_diff_flg end as from_pin_no_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.from_terminal_name_diff_flg else res.from_terminal_name_diff_flg end as from_terminal_name_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.from_parts_code_diff_flg else res.from_parts_code_diff_flg end as from_parts_code_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.to_parts_name_diff_flg else res.to_parts_name_diff_flg end as to_parts_name_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.to_pin_no_diff_flg else res.to_pin_no_diff_flg end as to_pin_no_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.to_terminal_name_diff_flg else res.to_terminal_name_diff_flg end as to_terminal_name_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.to_parts_code_diff_flg else res.to_parts_code_diff_flg end as to_parts_code_diff_flg
+		, case when forw.similar_point > res.similar_point then forw.wire_color_diff_flg else res.wire_color_diff_flg end as wire_color_diff_flg
+		from similar_for forw
+		left outer join similar_rev res
+		on (forw.old_row_num = res.old_row_num and forw.info_row_num = res.info_row_num)
+		)
+	insert into t_similar_calc
+    (
+		similar_diagram_search_id
+		, wire_id
+		, wire_list_detail_id
+		, similar_point
+		, reverse_flg
+		, from_parts_name_diff_flg
+		, from_pin_no_diff_flg
+		, from_terminal_name_diff_flg
+		, from_parts_code_diff_flg
+		, to_parts_name_diff_flg
+		, to_pin_no_diff_flg
+		, to_terminal_name_diff_flg
+		, to_parts_code_diff_flg
+		, wire_color_diff_flg
+		, insert_user_id
+		, insert_dt
+		, update_user_id
+		, update_dt
+    )
+		select
+		similar_diagram_search_id
+		, wire_id
+		, wire_list_detail_id
+		, similar_point
+		, reverse_flg
+		, from_parts_name_diff_flg
+		, from_pin_no_diff_flg
+		, from_terminal_name_diff_flg
+		, from_parts_code_diff_flg
+		, to_parts_name_diff_flg
+		, to_pin_no_diff_flg
+		, to_terminal_name_diff_flg
+		, to_parts_code_diff_flg
+		, wire_color_diff_flg
+		, null as insert_user_id
+		, now() as insert_dt
+		, null as update_user_id
+		, now() as update_dt
+		from
+		similar_ext
+		where
+		similar_point >= #min_point#
+	  ]]>
+	</statement>
+
+
+	  <!-- 類似回路検索 登録 -->
+	  <statement id="UpdateSimilarDiagramSearchResult" parameterClass="int">
+		  with search_result as (
+		  select
+		  t.similar_diagram_search_id
+		  , t.wire_list_pub_no_id
+		  , t.pub_no
+		  , t.import_version
+		  , t.fig_name
+		  , sum(t.similar_point) as similar_point
+		  , round(sum(t.similar_point) / count(t.similar_point) / 100 * 100, 2) as similar_percent
+		  from
+		  (
+		  select
+		  similar_diagram.similar_diagram_search_id
+		  , similar_diagram.wire_list_pub_no_id
+		  , similar_diagram.pub_no
+		  , similar_diagram.import_version
+		  , similar_diagram.fig_name
+		  , calc.similar_point
+		  from
+		  t_similar_diagram_search similar_diagram
+		  inner join t_wire_list_detail detail
+		  on (
+		  similar_diagram.wire_list_pub_no_id = detail.wire_list_pub_no_id
+		  )
+		  inner join t_similar_calc calc
+		  on (
+		  calc.similar_diagram_search_id = similar_diagram.similar_diagram_search_id
+		  and calc.wire_list_detail_id = detail.wire_list_detail_id
+		  )
+		  where similar_diagram.similar_diagram_search_id = #similarDiagramSearchId#
+		  ) t
+		  group by
+		  t.similar_diagram_search_id
+		  , t.wire_list_pub_no_id
+		  , t.pub_no
+		  , t.import_version
+		  , t.fig_name
+		  )
+		  update t_similar_diagram_search
+		  set
+		  status_cd = '03'
+		  , similar_point = rslt.similar_point
+		  , similar_percent = rslt.similar_percent
+		  , end_dt= now()
+		  , update_user_id = null
+		  , update_dt = now()
+		  from
+		  search_result rslt
+		  where
+		  t_similar_diagram_search.similar_diagram_search_id = rslt.similar_diagram_search_id
+		  and t_similar_diagram_search.wire_list_pub_no_id = rslt.wire_list_pub_no_id
+		  and t_similar_diagram_search.pub_no = rslt.pub_no
+		  and t_similar_diagram_search.import_version = rslt.import_version
+		  and t_similar_diagram_search.fig_name = rslt.fig_name
+	  </statement>
+	  
+    
+    <!-- エラーメッセージ 登録 -->
+    <insert id="InsertBatchError" parameterClass="BT0201.DBClass.CTBatchError">
+      INSERT INTO t_batch_error
+      (	batch_cd,error_kbn,error_title,	error_detail,start_dt,end_dt,insert_dt,update_dt)
+      VALUES
+      (#batchCd#,#errorKbn#, #errorTitle#, #errorDetail#,#startDt#,#endDt#,NOW(),NOW())
+    </insert>
+      
+</statements>
+</sqlMap>
