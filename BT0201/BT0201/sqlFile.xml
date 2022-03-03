@@ -276,7 +276,7 @@
 		, case when to_pin_no_diff_flg != 1 then 0 else #to_pin_no_point# end as to_pin_no_diff_point
 		, case when to_terminal_name_diff_flg != 1 then 0 else #to_terminal_name_point# end as to_terminal_name_diff_point
 		, case when to_parts_code_diff_flg != 1 then 0 else #to_parts_code_point# end as to_parts_code_diff_point
-		, case when wire_color_diff_flg != 1 then 0 else #wirecolor_point# end as wire_color_diff_point
+		, case when wire_color_diff_flg != 1 then 0 else #color_point# end as wire_color_diff_point
 		from
 		(
 		select
@@ -351,7 +351,7 @@
 		, case when to_pin_no_diff_flg != 1 then 0 else #to_pin_no_point# end as to_pin_no_diff_point
 		, case when to_terminal_name_diff_flg != 1 then 0 else #to_terminal_name_point# end as to_terminal_name_diff_point
 		, case when to_parts_code_diff_flg != 1 then 0 else #to_parts_code_point# end as to_parts_code_diff_point
-		, case when wire_color_diff_flg != 1 then 0 else #wirecolor_point# end as wire_color_diff_point
+		, case when wire_color_diff_flg != 1 then 0 else #color_point# end as wire_color_diff_point
 		from
 		(
 		select

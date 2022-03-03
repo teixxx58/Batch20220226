@@ -3,6 +3,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
+using System.Linq;
 
 namespace BT0301Batch
 {
@@ -61,7 +63,7 @@ namespace BT0301Batch
                         // テンプレート作成IDごとトランザクション開始
                         db.Begin();
                         ////////////////////////////////////////////////////
-                        /// DBを処理を開始ステータスに変更する
+                        /// DBを処理開始ステータスに変更する
                         ////////////////////////////////////////////////////
                         bool updateRslt = UpdateStartCreateTemplateStatus(
                             Convert.ToInt32(searchId["create_template_id"].ToString()));
@@ -89,46 +91,107 @@ namespace BT0301Batch
                             /// 類似度が高いものから結線IDの割り当て
                             ////////////////////////////////////////////////////
                             SimilarCircuit similarCircuit = new SimilarCircuit();
-                            IList<Hashtable>  assingedWires = similarCircuit.AssignWireId(wireInfos);
+
+                            Dictionary<string, Dictionary<string, List<Hashtable>>> assingedWires =
+                                similarCircuit.GetSyugakiWireids(wireInfos);
 
 
-                            foreach (Hashtable wire in assingedWires)
+                            foreach (string key in assingedWires["SYUGAKI"].Keys)
                             {
                                 ////////////////////////////////////////////////////
                                 /// 対象となった画像ファイルごとに朱書きを実施
                                 ////////////////////////////////////////////////////
-                                if (SimilarCircuit.ASSING_FLG_TRUE.Equals(wire["assingFlg"].ToString()) )
+                                List<Hashtable> syugakiFigs = assingedWires["SYUGAKI"][key];
+                                string pubNo = syugakiFigs[0]["pub_no"].ToString();
+
+                                string figPath = loacleDataDir + pubNo + svgDir + key + ".svg";
+                                string pdfPath = hinagataDir + searchId["create_template_id"].ToString() +
+                                    "\\PDF\\" + key + ".pdf";
+                                string svgPath = hinagataDir + searchId["create_template_id"].ToString() +
+                                    "\\SVG\\" + key + ".svg";
+
+                                if (!File.Exists(figPath))
                                 {
-
-
+                                    CLogger.Logger("ERR_FILE_READ", figPath);
+                                    BatchBase.AppendErrMsg("ERR_FILE_READ", figPath);
+                                    continue;
                                 }
-                                ////////////////////////////////////////////////////
-                                /// 追加結線のファイルを作成する
-                                ////////////////////////////////////////////////////
+                                //朱書きファイルの読み込む
+                                Syugaki syugaki = new Syugaki(figPath);
+                                syugaki.RedDraws(syugakiFigs);
+
+                                //結線削除
+                                syugaki.DeleteRedDraws(assingedWires["ADDWIRES"][key]);
+
+                                //朱書きが完了したファイル保存
+                                syugaki.SVGSave(svgPath);
+
+                                //朱書きしたファイルについてPDFを作成する
+                                PDFUtil.GeneratePDF(svgPath, pdfPath);
+
+                                //更新DB（朱書き）
+                                Hashtable syugakiFile = new Hashtable
+                                {
+                                    {"create_svg_file_name" , svgPath},
+                                    {"create_pdf_file_name",pdfPath},
+                                    {"create_template_image_id", searchId["create_template_image_id"].ToString()},
+                                };
+                                UpdateSyugaki(syugakiFile);
+                            }
+                            ////////////////////////////////////////////////////
+                            /// 追加ファイルを作成する
+                            ////////////////////////////////////////////////////
+                            //SVGテンプレート
+                            string templateFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @".\template\AddTemplate.svg");
+                            //追加ファイル名
+                            string addSvgFile = BatchBase.hinagataDir + "\\" + searchId["create_template_id"].ToString() + 
+                                "\\SVG\\ADD_SVG.svg";
+                            string addPdfFile = BatchBase.hinagataDir + "\\" + searchId["create_template_id"].ToString() +
+                                "\\PDF\\ADD_SVG.pdf";
+
+                            IList<Hashtable> addInfo = SearchAddFileWireInfo(assingedWires);
+
+                            Dictionary<string, List<Hashtable>> dicAdd = new Dictionary<string, List<Hashtable>>();
+                            foreach (Hashtable wire in addInfo)
+                            {
+                                //パーツペア辞書化
+                                if (!dicAdd.Keys.Contains(wire["row_num"].ToString()))
+                                {
+                                    List<Hashtable> addwires = new List<Hashtable>();
+                                    addwires.Add(wire);
+                                    dicAdd.Add(wire["row_num"].ToString(), addwires);
+                                }
                                 else
                                 {
-
-
+                                    dicAdd[wire["row_num"].ToString()].Add(wire);
                                 }
-
-
                             }
+                            //追加ファイル作成
+                            AddFile addfile = new AddFile(templateFile);
+                            addfile.GenerateAddFigDiagramFile(dicAdd);
 
-                            ///
+                            //追加ファイル保存
+                            addfile.SVGSave(addSvgFile);
+                            //更新DB（追加ファイル）
+                            //TODO
 
+                            //朱書きしたファイルについてPDFを作成する
+                            PDFUtil.GeneratePDF(addSvgFile, addPdfFile);
 
+                            //更新DB（追加ファイル）
+                            Hashtable addFile = new Hashtable
+                            {
+                                {"create_svg_file_name" , addSvgFile},
+                                {"create_pdf_file_name",addPdfFile},
+                                { "create_template_id", searchId["create_template_id"].ToString()},
 
-
-
-
-                            bool registRslt = UpdateSimilarDiagramSearchResult(Convert.ToInt32(searchId["create_template_id"].ToString()));
-
+                            };
+                            UpdateAddFile(addFile);
+                            
+                            //状態更新
                             UpdateEndCreateTemplateStatus(Convert.ToInt32(searchId["create_template_id"].ToString()),
                                    STATUS_CD_COMPLETED);
                         }
-
-
-
                         //ログメッセージDB書き込み
                         BatchBase.dtCreateEnd = DateTime.Now;
                         BatchBase.WriteErrMsg_DB();
@@ -145,7 +208,7 @@ namespace BT0301Batch
                         db.Commit();
                     }
 
-                    // 次のPUBNOへに進む
+                    // 次のテンプレート作成IDへ
                 }
             }
             catch (Exception ex)
@@ -189,7 +252,7 @@ namespace BT0301Batch
             catch (Exception ex)
             {
                 CLogger.Err(ex);
-                BatchBase.AppendErrMsg("WNG_DB_FAILED","テンプレート作成のステータス更新");
+                BatchBase.AppendErrMsg("ERR_DB_FAILED","テンプレート作成のステータス更新");
                 return false;
             }
          
@@ -221,7 +284,7 @@ namespace BT0301Batch
             catch (Exception ex)
             {
                 CLogger.Err(ex);
-                BatchBase.AppendErrMsg("WNG_DB_FAILED", "テンプレート作成のステータス更新");
+                BatchBase.AppendErrMsg("ERR_DB_FAILED", "テンプレート作成のステータス更新");
                 return false;
             }
             string name = "";
@@ -249,24 +312,47 @@ namespace BT0301Batch
         }
 
         /// <summary>
-        /// 類似度計算結果の登録
+        /// 朱書き結果の登録
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        private bool UpdateSimilarDiagramSearchResult(int id)
+        private bool UpdateSyugaki(Hashtable syugaki)
         {
             try
             {
-                db.Update("UpdateSimilarDiagramSearchResult", id);
+                db.Update("UpdateSyugaki", syugaki);
             }
             catch(Exception ex)
             {
                 CLogger.Err(ex);
-                BatchBase.AppendErrMsg("WNG_DB_FAILED", "類似度計算結果の登録");
+                BatchBase.AppendErrMsg("ERR_DB_FAILED", "朱書きの登録");
                 return false;
             }
-            CLogger.Logger("INFO_SUCCESS", "類似度計算結果の登録");
-            BatchBase.AppendErrMsg("INFO_SUCCESS", "類似度計算結果の登録");
+            CLogger.Logger("INFO_SUCCESS", "朱書きの登録");
+            BatchBase.AppendErrMsg("INFO_SUCCESS", "朱書きの登録");
+            return true;
+
+        }
+
+        /// <summary>
+        /// 追加ファイル結果の登録
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private bool UpdateAddFile(Hashtable addFile)
+        {
+            try
+            {
+                db.Update("UpdateAddFile", addFile);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Err(ex);
+                BatchBase.AppendErrMsg("ERR_DB_FAILED", "追加ファイルの登録");
+                return false;
+            }
+            CLogger.Logger("INFO_SUCCESS", "追加ファイルの登録");
+            BatchBase.AppendErrMsg("INFO_SUCCESS", "追加ファイルの登録");
             return true;
 
         }
@@ -289,11 +375,43 @@ namespace BT0301Batch
             catch (Exception ex)
             {
                 CLogger.Err(ex);
-                BatchBase.AppendErrMsg("WNG_DB_FAILED", "類似経線情報の取得");
+                BatchBase.AppendErrMsg("ERR_DB_FAILED", "類似経線情報の取得");
                 return null;
             }
             CLogger.Logger("INFO_SUCCESS", "類似経線情報の取得");
             BatchBase.AppendErrMsg("INFO_SUCCESS", "類似経線情報の取得");
+            return wireInfos;
+
+        }
+
+        /// <summary>
+        /// 追加ファイルの結線情報の取得
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        private IList<Hashtable> SearchAddFileWireInfo(Dictionary<string,Dictionary<string, List<Hashtable>>> assingedWires)
+        {
+            List<Hashtable> selectParams = new List<Hashtable>();
+            foreach (string fig in assingedWires["ADDWIRES"].Keys)
+            {
+                foreach (Hashtable rec in assingedWires["ADDWIRES"][fig])
+                {
+                    selectParams.Add(new Hashtable { { "wire_list_detail_id", rec["wire_list_detail_id"] }, });
+                }
+            }
+            IList<Hashtable> wireInfos;
+            try
+            {
+                wireInfos = db.QueryForList<Hashtable>("SearchAddWireInfo", selectParams);
+            }
+            catch (Exception ex)
+            {
+                CLogger.Err(ex);
+                BatchBase.AppendErrMsg("ERR_DB_FAILED", "追加ファイルの結線情報の取得");
+                return null;
+            }
+            CLogger.Logger("INFO_SUCCESS", "追加ファイルの結線情報の取得");
+            BatchBase.AppendErrMsg("INFO_SUCCESS", "追加ファイルの結線情報の取得");
             return wireInfos;
 
         }

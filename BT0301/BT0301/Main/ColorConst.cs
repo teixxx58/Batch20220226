@@ -1,33 +1,78 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace BT0301Batch
 {
-    /// <summary>
-    /// 線色定数
-    /// </summary>
-    class ColorConst
+
+    public class ColorConst
     {
-        public static string WIRE_COLOR_AM = "#F8B500";
-        public static string WIRE_COLOR_B = "#000000";
-        public static string WIRE_COLOR_BE = "#C3AF96";
-        public static string WIRE_COLOR_BR = "#992903";
-        public static string WIRE_COLOR_DG = "#666666";
-        public static string WIRE_COLOR_G = "#008837";
-        public static string WIRE_COLOR_GR = "#999999";
-        public static string WIRE_COLOR_L = "#00A0C6";
-        public static string WIRE_COLOR_LA = "#BFB1C5";
-        public static string WIRE_COLOR_LG = "#7FC97F";
-        public static string WIRE_COLOR_O = "#FF7F00";
-        public static string WIRE_COLOR_P = "#F668B2";
-        public static string WIRE_COLOR_R = "#FF0000";
-        public static string WIRE_COLOR_SB = "#99D9E8";
-        public static string WIRE_COLOR_V = "#56077D";
-        public static string WIRE_COLOR_W = "#FFFFFF";
-        public static string WIRE_COLOR_Y = "#FFE600";
-        public static string WIRE_COLOR_DEFAULT = "#000000";
+        /// <summary>
+        /// 線色定数
+        /// </summary>
+        enum ColorEnum
+        {
+            [Description("#F8B500")]
+            AM,
+            [Description("#000000")]
+            B,
+            [Description("#C3AF96")]
+            BE,
+            [Description("#992903")]
+            BR,
+            [Description("#666666")]
+            DG,
+            [Description("#008837")]
+            G,
+            [Description("#999999")]
+            GR,
+            [Description("#00A0C6")]
+            L,
+            [Description("#BFB1C5")]
+            LA,
+            [Description("#7FC97F")]
+            LG,
+            [Description("#FF7F00")]
+            O,
+            [Description("#F668B2")]
+            P,
+            [Description("#FF0000")]
+            R,
+            [Description("#99D9E8")]
+            SB,
+            [Description("#56077D")]
+            V,
+            [Description("#FFFFFF")]
+            W,
+            [Description("#FFE600")]
+            Y,
+            [Description("#000000")]
+            DEFAULT,
+        }
+        // 拡張メソッド
+        public static string GetColor(string col)
+        {
+            string description = null;
+            ColorEnum color = new ColorEnum();
+            try
+            {
+                var gm = color.GetType().GetMember(col);
+                var attributes = gm[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+                description = ((DescriptionAttribute)attributes[0]).Description;
+            }
+            catch(Exception ex)
+            {
+                CLogger.Err(ex);
+                BatchBase.AppendErrMsg("ERR_COLOR_NOT_FUND", col);
+                return "#000000";
+            }
+
+            return description;
+        }
+
     }
+
 }

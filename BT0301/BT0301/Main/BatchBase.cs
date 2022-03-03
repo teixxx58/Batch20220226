@@ -19,14 +19,18 @@ namespace BT0301Batch
         //雛形回路作成の終了時間
         public static DateTime dtCreateEnd;
 
+        //100点類似度
+        public static int similar100Point = 100;
         //朱書き対象とする最低の類似度
         public static int targetSyugakiMinPoint = Convert.ToInt32(ConfigurationManager.AppSettings["TARGET_SYUGAKI_MIN_POINT"]);
         //朱書きする際のフォントサイズ
         public static int syugakiFontSize = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_FONT_SIZE"]);
         //朱書きする位置に対しての補正値		
         public static int syugakiOffsetSize = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_OFFSET_SIZE"]);
-        //テンプレートファイル保存場所		
+        //テンプレートファイル保存場所ルート		
         public static string loacleDataDir = ConfigurationManager.AppSettings["LOCAL_DATA_DIR"];
+        //*.svgのファイル保存パス
+        public static string svgDir = ConfigurationManager.AppSettings["SVG_DIR"];
         //雛形ファイルを作成するフォルダ	
         public static string hinagataDir = ConfigurationManager.AppSettings["HINAGATA_DIR"];
 

@@ -1,45 +1,3 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<sqlMap namespace="BT0301Batch"
-        xmlns="http://ibatis.apache.org/mapping"
-  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" >
-
-  <statements>
-	  <!-- 雛形回路作成　検索 -->
-	  <!-- 01:実行待ち 02:実行中 03:完了 04:完了(警告あり) 05:エラー -->
-	  <select id="SelectCreateTemplateId" resultClass="HashTable">
-		  SELECT create_template_id
-		  FROM t_create_template
-		  WHERE status_cd = '01'
-	  </select>
-
-
-	  <!-- テンプレート作成(開始) 更新 -->
-	  <update id="UpdateStartCreateTemplateStatus" parameterClass="BT0301.DBClass.CTCreateTemplate" >
-		  UPDATE t_create_template
-		  SET
-		  status_cd      = #statusCd#,
-		  start_dt       =NOW(),
-		  end_dt         =null,
-		  update_user_id = null,
-		  update_dt      = NOW()
-		  WHERE
-		  create_template_id   = #create_template_id#
-	  </update>
-
-	  <!-- テンプレート作成(終了) 更新 -->
-	  <update id="UpdateEndCreateTemplateStatus" parameterClass="BT0301.DBClass.CTCreateTemplate" >
-		  UPDATE t_similar_diagram_search
-		  SET
-		  status_cd      = #statusCd#,
-		  end_dt         =NOW(),
-		  update_user_id = null,
-		  update_dt      = NOW()
-		  WHERE
-		  create_template_id   = #create_template_id#
-	  </update>    
-    <!-- 類似経線情報 検索 -->
-    <statement id="SearchSimilarWireInfo" parameterClass="Hashtable" resultClass="HashTable" >
-	  <![CDATA[ 
 --- 雛形作成対象経線IDの抽出
 with
 calc_wireids as ( 
@@ -69,11 +27,10 @@ calc_wireids as (
         , wiredetail.to_terminal_name as detail_to_terminal_name
         , wiredetail.to_pin_no as detail_to_pin_no
         , wiredetail.wire_color as detail_wire_color
-		, wiredetail.path as detail_path
         
     from
         t_create_template tpl 
-        inner join t_wire_list_pub_no wirepub
+        inner join t_wire_list_pub_no wirepub 
             on ( 
                 wirepub.wire_list_pub_no_id = tpl.wire_list_pub_no_id
             ) 
@@ -95,7 +52,6 @@ calc_wireids as (
         left outer join t_similar_calc calc 
             on ( 
                 diagramsearch.similar_diagram_search_id = calc.similar_diagram_search_id
-				and wiredetail.wire_list_detail_id = calc.wire_list_detail_id
             ) 
     where
         tpl.create_template_id = #createTplId# 
@@ -126,7 +82,6 @@ calc_wireids as (
         , wiredetail.to_terminal_name
         , wiredetail.to_pin_no
         , wiredetail.wire_color
-		, wiredetail.path
     order by
         calc.similar_point desc
 )
@@ -162,7 +117,6 @@ calc_wireids as (
         , calc.detail_to_terminal_name
         , calc.detail_to_pin_no
         , calc.detail_wire_color
-		, calc.detail_path
     from
         calc_wireids calc 
         inner join t_wire 
@@ -261,96 +215,11 @@ calc_wireids as (
         , wire.detail_to_terminal_name
         , wire.detail_to_pin_no
         , wire.detail_wire_color
-        , wire.detail_path as path
+        
     from
         wireids wire 
         left outer join parts_terminal fromterm 
             on (wire.from_terminal_id = fromterm.terminal_id) 
         left outer join parts_terminal toterm 
             on (wire.to_terminal_id = toterm.terminal_id)
-	  ]]>
-	</statement>
-
-	  <!-- 割り当たらない経線情報 検索 -->
-	  <statement id="SearchAddWireInfo" parameterClass="Hashtable" resultClass="HashTable" >
-		  <![CDATA[ 
-	  with diff as (
-	  select
-	  row_number() over () as row_num
-	  , from_parts_code
-	  , to_parts_code
-	  from
-	  t_wire_list_detail
-	  group by
-	  from_parts_code
-	  , to_parts_code
-	  )
-	  select
-	  diff.row_num
-	  , detail.wire_list_detail_id
-	  , detail.wire_list_pub_no_id
-	  , detail.harness
-	  , detail.from_parts_code
-	  , detail.from_parts_name
-	  , detail.from_wh_parts_name
-	  , detail.from_terminal_name
-	  , detail.from_pin_no
-	  , detail.to_parts_code
-	  , detail.to_parts_name
-	  , detail.to_wh_parts_name
-	  , detail.to_terminal_name
-	  , detail.to_pin_no
-	  , detail.wire_color
-	  from
-	  t_wire_list_detail detail
-	  inner join diff
-	  on (
-	  detail.from_parts_code = diff.from_parts_code
-	  and detail.to_parts_code = diff.to_parts_code
-	  )
-	 <iterate property="wire_list_detail_id" prepend="where detail.wire_list_detail_id in" open="(" close=")" conjunction=",">
-        #wire_list_detail_id[]#
-      </iterate>
-	  order by
-	  detail.from_parts_code
-	  , detail.to_parts_code
-	  , detail.from_pin_no
-	  , detail.to_pin_no;
-	  ]]>
-	</statement>
-
-	  <!-- 朱書き　登録 -->
-	  <update id="UpdateSyugaki">
-		  UPDATE t_create_template_image
-		  SET
-		  create_svg_file_name = #create_svg_file_name#,
-		  create_pdf_file_name = #create_pdf_file_name#,
-		  update_user_id = 'BT0301',
-		  update_dt = NOW()
-		  WHERE
-		  create_template_image_id = #create_template_image_id#
-	  </update>
-	  
-	  <!-- 追加ファイル　登録 -->
-	  <update id="UpdateAddFile">
-		  UPDATE t_create_template_image
-		  SET
-		  create_svg_file_name = #create_svg_file_name#,
-		  create_pdf_file_name = #create_pdf_file_name#,
-		  update_user_id = 'BT0301',
-		  update_dt = NOW()
-		  WHERE
-		  create_template_id = #create_template_id#
-		  and image_for_add_flg = '1'
-	  </update>
-    
-    <!-- エラーメッセージ 登録 -->
-    <insert id="InsertBatchError" parameterClass="BT0301.DBClass.CTBatchError">
-      INSERT INTO t_batch_error
-      (	batch_cd,error_kbn,error_title,	error_detail,start_dt,end_dt,insert_dt,update_dt)
-      VALUES
-      (#batchCd#,#errorKbn#, #errorTitle#, #errorDetail#,#startDt#,#endDt#,NOW(),NOW())
-    </insert>
-      
-</statements>
-</sqlMap>
+;

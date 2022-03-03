@@ -315,9 +315,9 @@ namespace BT0301Batch {
         /// <summary>
         ///   [{0}][{1}]テーブル更新が失敗しました。 に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string WNG_DB_FAILED {
+        internal static string ERR_DB_FAILED {
             get {
-                return ResourceManager.GetString("WNG_DB_FAILED", resourceCulture);
+                return ResourceManager.GetString("ERR_DB_FAILED", resourceCulture);
             }
         }
         

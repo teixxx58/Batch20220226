@@ -1,40 +1,64 @@
-﻿using System;
+﻿using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
+using Svg;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing;
+using System.IO;
 
-namespace BT0301Batch.Main
+namespace BT0301Batch
 {
-    class Util
+    class PDFUtil
     {
-        private static void GeneratePDF()
+
+        private const double PAGE_WIDTH = 1391;
+        private const double PAGE_HEIGHT = 842;
+
+        /// <summary>
+        /// PDFファイル生成
+        /// </summary>
+        /// <param name="filePath"></param>
+        public static void GeneratePDF(string svgFilePath, string outPdfPath)
         {
-            string filename = "../../ffffff.pdf";
-            string imageLoc = "../../sample.png";
-
             PdfDocument document = new PdfDocument();
-            //1191×842
-            List<Image> imgs = GeneratePDF1(Image.FromFile(imageLoc), 1391, 842);
 
-            foreach (Image img in imgs)
+            //SVG画像
+            SvgDocument svgDoc = SvgDocument.Open(svgFilePath);
+            try
             {
-                // Create an empty page or load existing
-                PdfPage page = document.AddPage();
-                page.Orientation = PageOrientation.Landscape;
-                page.Size = PdfSharp.PageSize.A3;
+                //1191×842 A3用紙サイズ
+                List<Image> imgs = GeneratePDF(svgDoc.Draw(), PAGE_WIDTH, PAGE_HEIGHT);
 
-                // Get an XGraphics object for drawing
-                XGraphics gfx = XGraphics.FromPdfPage(page);
+                foreach (Image img in imgs)
+                {
+                    // Create an empty page or load existing
+                    PdfPage page = document.AddPage();
+                    page.Orientation = PageOrientation.Landscape;
+                    page.Size = PdfSharp.PageSize.A3;
 
-                MemoryStream strm = new MemoryStream();
-                img.Save(strm, System.Drawing.Imaging.ImageFormat.Png);
+                    // Get an XGraphics object for drawing
+                    XGraphics gfx = XGraphics.FromPdfPage(page);
 
-                gfx.DrawImage(XImage.FromStream(strm), 50, 10);
+                    MemoryStream strm = new MemoryStream();
+                    img.Save(strm, System.Drawing.Imaging.ImageFormat.Png);
 
+                    gfx.DrawImage(XImage.FromStream(strm), 50, 10);
+
+                }
+                //PDFファイル保存
+                if (!Directory.Exists(Path.GetDirectoryName(outPdfPath)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(outPdfPath));
+                }
+
+                document.Save(outPdfPath);
             }
-            // Save and start View
-            document.Save(filename);
+            catch(Exception ex)
+            {
+                CLogger.Err(ex);
+                BatchBase.AppendErrMsg("ERR_FILE_WRITE_FAILED", outPdfPath);
+            }
         }
 
         /// <summary>
@@ -45,7 +69,7 @@ namespace BT0301Batch.Main
         /// <param name="pageHeight">高さ</param>
         /// <returns>分割済Image</returns>
         /// <remarks></remarks>
-        public static List<Image> GeneratePDF1(Image originalImage, double pageWidth, double pageHeight)
+        private static List<Image> GeneratePDF(Image originalImage, double pageWidth, double pageHeight)
         {
             double leftMargin = 10.0;
             double rightMargin = 10.0;

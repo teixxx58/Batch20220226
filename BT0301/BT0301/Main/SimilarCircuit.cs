@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 
 namespace BT0301Batch
 {
@@ -11,7 +14,7 @@ namespace BT0301Batch
     {
         private IList<Hashtable> assignedWires = new List<Hashtable>();
         public const string ASSING_FLG_TRUE = "1";
-        public const string ASSING_FLG_FALSE = "0";
+        public const string ASSING_FLG_FALSE = "0";    
 
         /// <summary>
         /// 経線の割当
@@ -63,7 +66,7 @@ namespace BT0301Batch
         /// </summary>
         /// <param name="wireList"></param>
         /// <returns></returns>
-        public Dictionary<string, Dictionary<string, List<Hashtable>>> GetSyugakiWireids(List<Hashtable> wireList)
+        public Dictionary<string, Dictionary<string, List<Hashtable>>> GetSyugakiWireids(IList<Hashtable> wireList)
         {
             IList<Hashtable> assignWire = AssignWireId(wireList);
 
@@ -106,34 +109,7 @@ namespace BT0301Batch
             }
             return figs;
         }
-        /// <summary>
-        /// 配線図ごとに朱書き
-        /// </summary>
-        /// <param name="fig"></param>
-        public void EditSyugaki(Dictionary<string, List<Hashtable>> fig)
-        {
 
-
-        }
-
-        /// <summary>
-        /// 追加配線図(1ファイルに出力)
-        /// </summary>
-        /// <param name="fig"></param>
-        public void AddFigDiagram(Dictionary<string, List<Hashtable>> fig)
-        {
-
-
-        }
-        /// <summary>
-        /// PDFファイル作成
-        /// </summary>
-        /// <param name="fig"></param>
-        public void MakePDF(string svgPath)
-        {
-
-
-        }
 
     }
 }
