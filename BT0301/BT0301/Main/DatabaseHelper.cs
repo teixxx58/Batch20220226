@@ -1,11 +1,10 @@
 ﻿using IBatisNet.DataMapper;
 using IBatisNet.DataMapper.Configuration;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Configuration;
 using System.Collections;
+using System.Collections.Generic;
+using System.Configuration;
+using System.Text;
 
 namespace BT0301Batch
 {
