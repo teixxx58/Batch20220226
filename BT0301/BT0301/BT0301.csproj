@@ -91,7 +91,6 @@
     <Compile Include="DBClass\CTBatchError.cs" />
     <Compile Include="DBClass\CTCreateTemplate.cs" />
     <Compile Include="DBClass\CTCreateTemplateImage.cs" />
-    <Compile Include="DBClass\CTSimilarDiagramSearch.cs" />
     <Compile Include="Main\BatchBase.cs" />
     <Compile Include="Main\BatchMain.cs" />
     <Compile Include="Main\CLogger.cs" />
@@ -99,7 +98,6 @@
     <Compile Include="Main\DatabaseHelper.cs" />
     <Compile Include="Main\SimilarCircuit.cs" />
     <Compile Include="Main\PDFUtil.cs" />
-    <Compile Include="DBClass\CTWireInfo.cs" />
     <Compile Include="Main\AddFile.cs" />
     <Compile Include="Messages.Designer.cs" />
     <Compile Include="Program.cs" />

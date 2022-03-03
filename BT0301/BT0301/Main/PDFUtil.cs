@@ -15,6 +15,11 @@ namespace BT0301Batch
         private const double PAGE_WIDTH = 1391;
         private const double PAGE_HEIGHT = 842;
 
+        static double leftMargin = 10.0;
+        static double rightMargin = 10.0;
+        static double topMargin = 10.0;
+        static double bottomMargin = 10.0;
+
         /// <summary>
         /// PDFファイル生成
         /// </summary>
@@ -71,11 +76,6 @@ namespace BT0301Batch
         /// <remarks></remarks>
         private static List<Image> GeneratePDF(Image originalImage, double pageWidth, double pageHeight)
         {
-            double leftMargin = 10.0;
-            double rightMargin = 10.0;
-            double topMargin = 10.0;
-            double bottomMargin = 10.0;
-
             double Width = pageWidth - leftMargin - rightMargin;
             double Height = pageHeight - topMargin - bottomMargin;
 
@@ -90,8 +90,6 @@ namespace BT0301Batch
                 {
                     rect = new Rectangle((int)(hCnt * Width), 0,
                         originalImage.Width - (int)(hCnt * Width), originalImage.Height);
-
-
                 }
                 else
                 {

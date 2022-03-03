@@ -134,7 +134,7 @@ namespace BT0301Batch
                                 {
                                     {"create_svg_file_name" , svgPath},
                                     {"create_pdf_file_name",pdfPath},
-                                    {"create_template_image_id", searchId["create_template_image_id"].ToString()},
+                                    {"create_template_image_id", syugakiFigs[0]["create_template_image_id"].ToString()},
                                 };
                                 UpdateSyugaki(syugakiFile);
                             }
@@ -172,8 +172,6 @@ namespace BT0301Batch
 
                             //追加ファイル保存
                             addfile.SVGSave(addSvgFile);
-                            //更新DB（追加ファイル）
-                            //TODO
 
                             //朱書きしたファイルについてPDFを作成する
                             PDFUtil.GeneratePDF(addSvgFile, addPdfFile);

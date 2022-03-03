@@ -70,6 +70,7 @@ calc_wireids as (
         , wiredetail.to_pin_no as detail_to_pin_no
         , wiredetail.wire_color as detail_wire_color
 		, wiredetail.path as detail_path
+		, tplimage.create_template_image_id
         
     from
         t_create_template tpl 
@@ -127,10 +128,11 @@ calc_wireids as (
         , wiredetail.to_pin_no
         , wiredetail.wire_color
 		, wiredetail.path
+		, tplimage.create_template_image_id
     order by
         calc.similar_point desc
 )
---- 対象経線のFrom/To端子、色、SVGID情報の付与  
+--- 対象結線のFrom/To端子、色、SVG_LINE_ID情報の付与  
 , wireids as ( 
     select
         calc.wire_list_detail_id
@@ -163,6 +165,7 @@ calc_wireids as (
         , calc.detail_to_pin_no
         , calc.detail_wire_color
 		, calc.detail_path
+		, calc.create_template_image_id
     from
         calc_wireids calc 
         inner join t_wire 
@@ -262,6 +265,7 @@ calc_wireids as (
         , wire.detail_to_pin_no
         , wire.detail_wire_color
         , wire.detail_path as path
+		, wire.create_template_image_id
     from
         wireids wire 
         left outer join parts_terminal fromterm 
