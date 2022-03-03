@@ -118,10 +118,10 @@ namespace BT0101Batch
             {
 
                 CTImportFileWk ct = new CTImportFileWk();
-                string fullName = "";
+                string fullName = file.FullName;
                 foreach (string fN in path)
                 {
-                    fullName = Regex.Replace(file.FullName, Regex.Escape(fN), @"");
+                    fullName = Regex.Replace(fullName, Regex.Escape(fN), @"");
                 }
                 ct.importedFilePath = fullName;
                 ct.impotedFileUpdateDate = file.LastWriteTime;
