@@ -30,6 +30,7 @@ namespace BT0301Batch
 
             //SVG画像
             SvgDocument svgDoc = SvgDocument.Open(svgFilePath);
+            svgDoc.Draw().Save(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"../../sample.png"));
             try
             {
                 //1191×842 A3用紙サイズ

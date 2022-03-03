@@ -27,7 +27,7 @@ namespace BT0301Batch
         //縦書き Matrix
         const string VER_MTX = "matrix(-0.00 -1.00 1.00 -0.00  @ )";
         //結線消し点線
-        const string STROKE_DOT_LINE = "stroke-dasharray:5 2";
+        const string STROKE_DOT_LINE = "stroke-dasharray:5 2 ;";
 
         private float X_OFFSET = 5F;
         private float Y_OFFSET = 3F;
@@ -84,7 +84,7 @@ namespace BT0301Batch
                 string partsCodeDiffFlag, pinNoDiffFlag, terminalNameDiffFlag;
 
                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(_xmlDoc.NameTable);
-                nsmgr.AddNamespace("a", "http://www.w3.org/2000/svg");
+                nsmgr.AddNamespace("ns", "http://www.w3.org/2000/svg");
                 XmlNodeList nodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:g", nsmgr);
                 XmlNodeList shieldNodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:a", nsmgr);
 
@@ -437,7 +437,7 @@ namespace BT0301Batch
             try
             {
                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(_xmlDoc.NameTable);
-                nsmgr.AddNamespace("a", "http://www.w3.org/2000/svg");
+                nsmgr.AddNamespace("ns", "http://www.w3.org/2000/svg");
                 XmlNodeList delLineNodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:a", nsmgr);
 
                 foreach (Hashtable item in wireInfoList)

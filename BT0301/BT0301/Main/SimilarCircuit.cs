@@ -66,12 +66,14 @@ namespace BT0301Batch
             IList<Hashtable> assignWire = AssignWireId(wireList);
 
             Dictionary<string, Dictionary<string, List<Hashtable>>> figs = new Dictionary<string, Dictionary<string, List<Hashtable>>>();
+
+            /// 朱書き経線              
+            Dictionary<string, List<Hashtable>> dicSyugaki = new Dictionary<string, List<Hashtable>>();
+            //追加結線
+            Dictionary<string, List<Hashtable>> dicAddWires = new Dictionary<string, List<Hashtable>>();
             foreach (Hashtable wire in assignWire)
             {
-                /// 朱書き経線              
-                Dictionary<string, List<Hashtable>> dicSyugaki = new Dictionary<string, List<Hashtable>>();
-                //追加結線
-                Dictionary<string, List<Hashtable>> dicAddWires = new Dictionary<string, List<Hashtable>>();
+
                 if (ASSING_FLG_TRUE.Equals(wire["assingFlg"].ToString()))
                 {
                     if (!dicSyugaki.Keys.Contains(wire["fig_name"].ToString()))
@@ -99,9 +101,9 @@ namespace BT0301Batch
                         dicAddWires[wire["fig_name"].ToString()].Add(wire);
                     }
                 }
-                figs.Add("SYUGAKI", dicSyugaki);
-                figs.Add("ADDWIRES", dicAddWires);
             }
+            figs.Add("SYUGAKI", dicSyugaki);
+            figs.Add("ADDWIRES", dicAddWires);
             return figs;
         }
 

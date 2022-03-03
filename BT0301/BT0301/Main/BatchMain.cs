@@ -134,7 +134,7 @@ namespace BT0301Batch
                                 {
                                     {"create_svg_file_name" , svgPath},
                                     {"create_pdf_file_name",pdfPath},
-                                    {"create_template_image_id", syugakiFigs[0]["create_template_image_id"].ToString()},
+                                    {"create_template_image_id", Convert.ToInt32(syugakiFigs[0]["create_template_image_id"].ToString())},
                                 };
                                 UpdateSyugaki(syugakiFile);
                             }
@@ -236,7 +236,7 @@ namespace BT0301Batch
         private bool UpdateStartCreateTemplateStatus(int id)
         {
             CTCreateTemplate updateParams = new CTCreateTemplate();
-            updateParams.createTemplate_id = id;
+            updateParams.createTemplateId = id;
             //02:実行中//03:終了
             updateParams.statusCd = STATUS_CD_RUNNING;
             updateParams.startDt = DateTime.Now;
@@ -268,7 +268,7 @@ namespace BT0301Batch
         private bool UpdateEndCreateTemplateStatus(int id, string status)
         {
             CTCreateTemplate updateParams = new CTCreateTemplate();
-            updateParams.createTemplate_id = id;
+            updateParams.createTemplateId = id;
             //03:完了 04:完了(警告あり) 05:エラー
             updateParams.statusCd = status;
             updateParams.updateDt = DateTime.Now;
@@ -335,7 +335,7 @@ namespace BT0301Batch
         /// <summary>
         /// 追加ファイル結果の登録
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="addFile"></param>
         /// <returns></returns>
         private bool UpdateAddFile(Hashtable addFile)
         {
@@ -355,7 +355,7 @@ namespace BT0301Batch
 
         }
         /// <summary>
-        /// 類似経線情報の取得
+        /// 類似結線情報の取得
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
@@ -385,28 +385,32 @@ namespace BT0301Batch
         /// <summary>
         /// 追加ファイルの結線情報の取得
         /// </summary>
-        /// <param name="id"></param>
+        /// <param name="assingedWires"></param>
         /// <returns></returns>
         private IList<Hashtable> SearchAddFileWireInfo(Dictionary<string,Dictionary<string, List<Hashtable>>> assingedWires)
         {
-            List<Hashtable> selectParams = new List<Hashtable>();
+            List<string> selectParams = new List<string>();
             foreach (string fig in assingedWires["ADDWIRES"].Keys)
             {
                 foreach (Hashtable rec in assingedWires["ADDWIRES"][fig])
                 {
-                    selectParams.Add(new Hashtable { { "wire_list_detail_id", rec["wire_list_detail_id"] }, });
+                    selectParams.Add(rec["wire_list_detail_id"].ToString());
                 }
             }
+            var wireDetail =new Hashtable 
+            { 
+                { "detail_id", selectParams }
+            };
             IList<Hashtable> wireInfos;
             try
             {
-                wireInfos = db.QueryForList<Hashtable>("SearchAddWireInfo", selectParams);
+                wireInfos = db.QueryForList<Hashtable>("SearchAddWireInfo", wireDetail);
             }
             catch (Exception ex)
             {
                 CLogger.Err(ex);
                 BatchBase.AppendErrMsg("ERR_DB_FAILED", "追加ファイルの結線情報の取得");
-                return null;
+                throw(ex);
             }
             CLogger.Logger("INFO_SUCCESS", "追加ファイルの結線情報の取得");
             BatchBase.AppendErrMsg("INFO_SUCCESS", "追加ファイルの結線情報の取得");

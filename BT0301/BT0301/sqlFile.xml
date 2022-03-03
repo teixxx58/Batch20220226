@@ -23,24 +23,23 @@
 		  update_user_id = null,
 		  update_dt      = NOW()
 		  WHERE
-		  create_template_id   = #create_template_id#
+		  create_template_id   = #createTemplateId#
 	  </update>
 
 	  <!-- テンプレート作成(終了) 更新 -->
 	  <update id="UpdateEndCreateTemplateStatus" parameterClass="BT0301.DBClass.CTCreateTemplate" >
-		  UPDATE t_similar_diagram_search
+		  UPDATE t_create_template
 		  SET
 		  status_cd      = #statusCd#,
 		  end_dt         =NOW(),
 		  update_user_id = null,
 		  update_dt      = NOW()
 		  WHERE
-		  create_template_id   = #create_template_id#
+		  create_template_id   = #createTemplateId#
 	  </update>    
-    <!-- 類似経線情報 検索 -->
+    <!-- 類似結線情報 検索 -->
     <statement id="SearchSimilarWireInfo" parameterClass="Hashtable" resultClass="HashTable" >
 	  <![CDATA[ 
---- 雛形作成対象経線IDの抽出
 with
 calc_wireids as ( 
     select
@@ -132,7 +131,7 @@ calc_wireids as (
     order by
         calc.similar_point desc
 )
---- 対象結線のFrom/To端子、色、SVG_LINE_ID情報の付与  
+
 , wireids as ( 
     select
         calc.wire_list_detail_id
@@ -172,7 +171,6 @@ calc_wireids as (
             on (t_wire.wire_id = calc.wire_id)
 ) 
 
---- メモリ占有を圧縮するため、対象結線のPubNo、配膳図、パーツ＆端子情報のみを絞り込み 
 , parts_terminal as ( 
     select
         pubno.pub_no
@@ -214,7 +212,6 @@ calc_wireids as (
         , term.point_y
         , term.direction
 )
---- 対象経線IDのFrom/To端子情報の付与 
     select wire.wire_id
         , wire.wire_list_detail_id
 	    , fromterm.pub_no as pub_no
@@ -312,8 +309,8 @@ calc_wireids as (
 	  detail.from_parts_code = diff.from_parts_code
 	  and detail.to_parts_code = diff.to_parts_code
 	  )
-	 <iterate property="wire_list_detail_id" prepend="where detail.wire_list_detail_id in" open="(" close=")" conjunction=",">
-        #wire_list_detail_id[]#
+	 <iterate property="detail_id" prepend="where detail.wire_list_detail_id in" open="(" close=")" conjunction=",">
+        #detail_id[]#
       </iterate>
 	  order by
 	  detail.from_parts_code
@@ -329,7 +326,7 @@ calc_wireids as (
 		  SET
 		  create_svg_file_name = #create_svg_file_name#,
 		  create_pdf_file_name = #create_pdf_file_name#,
-		  update_user_id = 'BT0301',
+		  update_user_id = null,
 		  update_dt = NOW()
 		  WHERE
 		  create_template_image_id = #create_template_image_id#
@@ -341,7 +338,7 @@ calc_wireids as (
 		  SET
 		  create_svg_file_name = #create_svg_file_name#,
 		  create_pdf_file_name = #create_pdf_file_name#,
-		  update_user_id = 'BT0301',
+		  update_user_id = null,
 		  update_dt = NOW()
 		  WHERE
 		  create_template_id = #create_template_id#
