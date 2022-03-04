@@ -17,11 +17,18 @@ namespace BT0301Batch
         //経線間間隔
         double LINE_INTERVAL = 30;
         //経線の長さ
-        double LINE_LENGTH = 40;
+        double LINE_LENGTH = 60;
         //パーツの高さ
-        double PARTS_HEIGHT = 55;
+        double PARTS_HEIGHT = 35;
         //パーツの左右マージン
         double PARTS_LEFT_RIGHT_MARGIN = 20;
+        //フォント高さ
+        double FONT_HEIGH = 6;
+        //フォントマージン
+        double FONT_MARGIN = 2;
+        //結線幅
+        double LINE_WEIDTH = 5.1;
+
 
         private XmlDocument _xmlDoc;
         private string _fileName;
@@ -69,6 +76,8 @@ namespace BT0301Batch
         /// <param name="dicWires"></param>
         public void GenerateAddFigDiagramFile( Dictionary<string, List<Hashtable>> dicWires)
         {
+            double pts;
+
             XmlNode svgRoot = _xmlDoc.DocumentElement;
             //テンプレート取得
             var fromPartsTemplate = (XmlElement)svgRoot.SelectSingleNode("//*[@name='fromPartsTemplate']");
@@ -79,6 +88,8 @@ namespace BT0301Batch
             labelTemplate.RemoveAttribute("name");
             var singleLineTemplate = (XmlElement)svgRoot.SelectSingleNode("//*[@name='singleLineTemplate']");
             singleLineTemplate.RemoveAttribute("name");
+            var whiteLineTemplate = (XmlElement)svgRoot.SelectSingleNode("//*[@name='whiteLineTemplate']");
+            whiteLineTemplate.RemoveAttribute("name");
             var doubleLineTemplate = (XmlElement)svgRoot.SelectSingleNode("//*[@name='doubleLineTemplate']");
             doubleLineTemplate.RemoveAttribute("name");
 
@@ -87,7 +98,7 @@ namespace BT0301Batch
             svgChildren.RemoveAll();
 
             double X_LANE_POSITION = LEFT_MARGIN;
-            double partsWidth = 0;
+            double partsWidth;
 
             //経線図作成
             foreach (string key in dicWires.Keys)
@@ -97,133 +108,197 @@ namespace BT0301Batch
                 //パーツ幅
                 partsWidth = 2 * PARTS_LEFT_RIGHT_MARGIN + (lineCnt - 1) * LINE_INTERVAL;
 
+                //テンプレートコピー
+                XmlElement fromParts = (XmlElement)fromPartsTemplate.CloneNode(true);
                 //FROMパーツ
                 //Fromパーツコード
-                fromPartsTemplate.InnerXml = Regex.Replace(fromPartsTemplate.InnerXml, "#from_parts_code#", dicWires[key][0]["from_parts_code"].ToString());
+                fromParts.SetAttribute("ewd:code", dicWires[key][0]["from_parts_code"].ToString());
                 //FromパーツHW名称
-                fromPartsTemplate.InnerXml = Regex.Replace(fromPartsTemplate.InnerXml, "#from_hw_parts_name#", dicWires[key][0]["from_wh_parts_name"].ToString());
+                fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#from_hw_parts_name#", dicWires[key][0]["from_wh_parts_name"].ToString());
+                pts = dicWires[key][0]["from_wh_parts_name"].ToString().Length;
+                //FROMパーツ名称
+                string fromPartsNamePosition = (X_LANE_POSITION + partsWidth / 2 - pts * FONT_HEIGH / 2) +
+                    "  " + (TOP_MARGIN - FONT_MARGIN *2);
+                fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#fromPartsNamePosition#", fromPartsNamePosition);
+
                 //Fromパーツ名称
-                fromPartsTemplate.InnerXml = Regex.Replace(fromPartsTemplate.InnerXml, "#from_parts_name#", dicWires[key][0]["from_parts_name"].ToString());
+                fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#from_parts_name#", dicWires[key][0]["from_parts_name"].ToString());
                 //Fromパーツ表示位置
-                string fromDisplayPosition = "\" M  " + X_LANE_POSITION + ",  " + TOP_MARGIN + " L  " + (X_LANE_POSITION + partsWidth) + ",  " +
-                    (TOP_MARGIN) + "  L  " + (X_LANE_POSITION + partsWidth) + ",  " + (TOP_MARGIN + PARTS_HEIGHT) + " L  " +
-                    X_LANE_POSITION + ",  " + (TOP_MARGIN + PARTS_HEIGHT) + " L  " + X_LANE_POSITION + ",  " + TOP_MARGIN + "\"";
+                string fromDisplayPosition =  X_LANE_POSITION + ",  " + TOP_MARGIN + 
+                    "  L  " + (X_LANE_POSITION + partsWidth) + ",  " +  TOP_MARGIN + 
+                    "  L  " + (X_LANE_POSITION + partsWidth) + ",  " + (TOP_MARGIN + PARTS_HEIGHT) + 
+                    "  L  " +  X_LANE_POSITION + ",  " + (TOP_MARGIN + PARTS_HEIGHT) + 
+                    "  L  " + X_LANE_POSITION + ",  " + TOP_MARGIN;
 
-                fromPartsTemplate.InnerXml = Regex.Replace(fromPartsTemplate.InnerXml, "#partsDisplayPosition#", fromDisplayPosition);
-                svgChildren.AppendChild(fromPartsTemplate.CloneNode(true));
-
-
+                fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#fromPartsDisplayPosition#", fromDisplayPosition);
+                svgChildren.AppendChild(fromParts.CloneNode(true));
 
                 //TOパーツ
+                //テンプレートコピー
+                XmlElement toParts = (XmlElement)toPartsTemplate.CloneNode(true);
                 //Toパーツコード
-                toPartsTemplate.InnerXml = Regex.Replace(toPartsTemplate.InnerXml,
-                    "#to_parts_code#", dicWires[key][0]["to_parts_code"].ToString());
-                //FromパーツHW名称
-                toPartsTemplate.InnerXml = Regex.Replace(toPartsTemplate.InnerXml, "#to_hw_parts_name#",
+                toParts.SetAttribute("ewd:code", dicWires[key][0]["to_parts_code"].ToString());
+                //ToパーツHW名称
+                toParts.InnerXml = Regex.Replace(toParts.InnerXml, "#to_hw_parts_name#",
                     dicWires[key][0]["to_wh_parts_name"].ToString());
-                //Fromパーツ名称
-                toPartsTemplate.InnerXml = Regex.Replace(toPartsTemplate.InnerXml, "#to_parts_name#", 
+                //Toパーツ名称
+                pts = dicWires[key][0]["to_wh_parts_name"].ToString().Length;
+                string toPartsNamePosition = (X_LANE_POSITION  + partsWidth /2 - pts*FONT_HEIGH/2) + 
+                    "  " + (TOP_MARGIN + 2*PARTS_HEIGHT + LINE_LENGTH + FONT_HEIGH + FONT_MARGIN);
+                toParts.InnerXml = Regex.Replace(toParts.InnerXml, "#toPartsNamePosition#", toPartsNamePosition);
+
+                //Toパーツ名称
+                toParts.InnerXml = Regex.Replace(toParts.InnerXml, "#to_parts_name#", 
                     dicWires[key][0]["to_parts_name"].ToString());
-                //Fromパーツ表示位置
-                string toDisplayPosition = "\" M  " + X_LANE_POSITION + ",  " + (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH) + " L  " + (X_LANE_POSITION + partsWidth) + ",  " +
-                    (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH) + "  L  " + (X_LANE_POSITION + partsWidth) + ",  " + (TOP_MARGIN + PARTS_HEIGHT + PARTS_HEIGHT + LINE_LENGTH) + " L  " +
-                    X_LANE_POSITION + ",  " + (TOP_MARGIN + PARTS_HEIGHT + PARTS_HEIGHT + LINE_LENGTH) + " L  " + X_LANE_POSITION + ",  " + (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH) + "\"";
+                //Toパーツ表示位置
+                string toDisplayPosition = X_LANE_POSITION + ",  " +   (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH ) + 
+                    "  L  " + (X_LANE_POSITION + partsWidth) + ",  " + (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH) + 
+                    "  L  " + (X_LANE_POSITION + partsWidth) + ",  " + (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH + PARTS_HEIGHT) +
+                    "  L  " + X_LANE_POSITION + ",  " +                (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH + PARTS_HEIGHT) + 
+                    "  L  " + X_LANE_POSITION + ",  " +                (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH);
 
-                toPartsTemplate.InnerXml = Regex.Replace(toPartsTemplate.InnerXml, "#partsDisplayPosition#", toDisplayPosition);
-                svgChildren.AppendChild(toPartsTemplate.CloneNode(true));
+                toParts.InnerXml = Regex.Replace(toParts.InnerXml, "#toPartsDisplayPosition#", toDisplayPosition);
+                svgChildren.AppendChild(toParts.CloneNode(true));
 
-                //経線作成
+                //結線作成
                 //X軸の移動
-                X_LANE_POSITION += PARTS_LEFT_RIGHT_MARGIN;
+                X_LANE_POSITION = X_LANE_POSITION + PARTS_LEFT_RIGHT_MARGIN;
                 foreach (Hashtable detailWire in dicWires[key])
                 {
-                    detailWire["from_terminal_name"].ToString();
-                    detailWire["from_pin_no"].ToString();
-                    detailWire["to_terminal_name"].ToString();
-                    detailWire["to_pin_no"].ToString();
 
                     var colors = detailWire["wire_color"].ToString().Split('-');
                     if (colors.Length > 1)
                     {
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#backColor#", ColorConst.GetColor(colors[0]));
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#frontColor#", ColorConst.GetColor(colors[1]));
+                        //テンプレートコピー
+                        var doubleLine = doubleLineTemplate.CloneNode(true);
 
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
+                            "#backColor#", ColorConst.GetColor(colors[1]));
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
+                            "#frontColor#", ColorConst.GetColor(colors[0]));
+
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
                             "#startX#", X_LANE_POSITION.ToString());
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#startY", (TOP_MARGIN + PARTS_HEIGHT).ToString());
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
+                            "#startY#", (TOP_MARGIN + PARTS_HEIGHT).ToString());
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
                             "#endX#", X_LANE_POSITION.ToString());
-                        doubleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#endY#", (TOP_MARGIN + PARTS_HEIGHT + PARTS_HEIGHT + LINE_LENGTH).ToString());
+                        doubleLine.InnerXml = Regex.Replace(doubleLine.InnerXml,
+                            "#endY#", (TOP_MARGIN + + PARTS_HEIGHT + LINE_LENGTH).ToString());
+
+                        //Wのみ場合
+                        if (detailWire["wire_color"].ToString().Equals("W"))
+                        {
+                            doubleLine.RemoveChild(doubleLine.ChildNodes[2]);
+                        }
+                        svgChildren.AppendChild(doubleLine.CloneNode(true));
+
+                    }
+                    //白線
+                    else if (colors.Length == 1 && detailWire["wire_color"].ToString().Equals("W"))
+                    {
+                        //テンプレートコピー
+                        var whiteLine = whiteLineTemplate.CloneNode(true);
+
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                            "#backColor#", ColorConst.GetColor("B"));
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                             "#frontColor#", ColorConst.GetColor("W"));
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                            "#startX#", X_LANE_POSITION.ToString());
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                            "#startY#", (TOP_MARGIN + PARTS_HEIGHT).ToString());
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                            "#endX#", X_LANE_POSITION.ToString());
+                        whiteLine.InnerXml = Regex.Replace(whiteLine.InnerXml,
+                            "#endY#", (TOP_MARGIN + +PARTS_HEIGHT + LINE_LENGTH).ToString());
+                       
+                        svgChildren.AppendChild(whiteLine.CloneNode(true));
 
                     }
                     else
                     {
-                        singleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
+                        //テンプレートコピー
+                        var singleLine = singleLineTemplate.CloneNode(true);
+                        singleLine.InnerXml = Regex.Replace(singleLine.InnerXml,
                             "#frontColor#", ColorConst.GetColor(colors[0]));
 
-                        singleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
+                        singleLine.InnerXml = Regex.Replace(singleLine.InnerXml,
                             "#startX#", X_LANE_POSITION.ToString());
-                        singleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#startY", (TOP_MARGIN + PARTS_HEIGHT).ToString());
-                        singleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
+                        singleLine.InnerXml = Regex.Replace(singleLine.InnerXml,
+                            "#startY#", (TOP_MARGIN + PARTS_HEIGHT).ToString());
+                        singleLine.InnerXml = Regex.Replace(singleLine.InnerXml,
                             "#endX#", X_LANE_POSITION.ToString());
-                        singleLineTemplate.InnerXml = Regex.Replace(singleLineTemplate.InnerXml,
-                            "#endY#", (TOP_MARGIN + PARTS_HEIGHT + PARTS_HEIGHT + LINE_LENGTH).ToString());
-                    }
-                    //端子名
-                    double pts;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#from_terminal_name#",
-                        detailWire["from_terminal_name"].ToString());
-                    pts = 6 * detailWire["from_terminal_name"].ToString().Length;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#fromTerminalNameX#",
-                        (X_LANE_POSITION - pts / 2).ToString());
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#fromTerminalNameY#",
-                        (TOP_MARGIN + PARTS_HEIGHT - 6).ToString());
+                        singleLine.InnerXml = Regex.Replace(singleLine.InnerXml,
+                            "#endY#", (TOP_MARGIN + PARTS_HEIGHT  + LINE_LENGTH).ToString());
 
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#to_terminal_name#",
+                        svgChildren.AppendChild(singleLine.CloneNode(true));
+                    }
+
+
+                    //端子名
+                    //テンプレートコピー
+                    var label = labelTemplate.CloneNode(true);
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#from_terminal_name#",
+                        detailWire["from_terminal_name"].ToString());
+                    
+                    pts = FONT_HEIGH * detailWire["from_terminal_name"].ToString().Length;
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#fromTerminalNameX#",
+                        (X_LANE_POSITION - pts/2 + LINE_WEIDTH/2).ToString());
+
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#fromTerminalNameY#",
+                        (TOP_MARGIN + PARTS_HEIGHT - FONT_MARGIN).ToString());
+
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#to_terminal_name#",
                         detailWire["to_terminal_name"].ToString());
-                    pts = 6 * detailWire["to_terminal_name"].ToString().Length;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#toTerminalNameX#",
-                        (X_LANE_POSITION - pts / 2).ToString());
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#tomTerminalNameY#",
-                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH + 6).ToString());
+                    
+                    pts = FONT_HEIGH * detailWire["to_terminal_name"].ToString().Length;
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#toTerminalNameX#",
+                        (X_LANE_POSITION - pts/2 + LINE_WEIDTH/2).ToString());
+
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#toTerminalNameY#",
+                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH + FONT_HEIGH + FONT_MARGIN).ToString());
 
                     //ピンNo.
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#from_pin_no#",
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#from_pin_no#",
                         detailWire["from_pin_no"].ToString());
-                    pts = 6 * detailWire["from_pin_no"].ToString().Length;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#fromPinNoX#",
-                        (X_LANE_POSITION - pts - 5).ToString());
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#fromPinNoY#",
-                        (TOP_MARGIN + PARTS_HEIGHT + 6).ToString());
 
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#to_pin_no#",
+                    pts = FONT_HEIGH * detailWire["from_pin_no"].ToString().Length;
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#fromPinNoX#",
+                        (X_LANE_POSITION - pts - FONT_MARGIN).ToString());
+
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#fromPinNoY#",
+                        (TOP_MARGIN + PARTS_HEIGHT + FONT_HEIGH).ToString());
+
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#to_pin_no#",
                         detailWire["to_pin_no"].ToString());
-                    pts = 6 * detailWire["to_pin_no"].ToString().Length;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#toPinNoX#",
-                        (X_LANE_POSITION - pts - 5).ToString());
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#toPinNoY#",
-                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH - 6 - 6).ToString());
+
+                    pts = FONT_HEIGH * detailWire["to_pin_no"].ToString().Length;
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#toPinNoX#",
+                        (X_LANE_POSITION - pts - FONT_MARGIN).ToString());
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#toPinNoY#",
+                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH - FONT_MARGIN).ToString());
 
                     //線色
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#wire_color#",
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#wire_color#",
                         detailWire["wire_color"].ToString());
-                    pts = 6 * detailWire["wire_color"].ToString().Length;
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#wireColorX#",
-                        (X_LANE_POSITION - 10).ToString());
-                    labelTemplate.InnerXml = Regex.Replace(labelTemplate.InnerXml, "#wireColorY#",
-                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH / 2 + pts / 2).ToString());
 
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#wireColorX#",
+                        (X_LANE_POSITION - FONT_HEIGH).ToString());
+
+                    pts = FONT_HEIGH * detailWire["wire_color"].ToString().Length;
+                    label.InnerXml = Regex.Replace(label.InnerXml, "#wireColorY#",
+                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH/2 + pts / 2).ToString());
+
+                    svgChildren.AppendChild(label.CloneNode(true));
                     //何本目結線
-                    X_LANE_POSITION += LINE_INTERVAL;
+                    X_LANE_POSITION = X_LANE_POSITION + LINE_INTERVAL;
                 }
                 //最後の1本も、移動させる
-                X_LANE_POSITION += PARTS_LEFT_RIGHT_MARGIN;
+                X_LANE_POSITION = X_LANE_POSITION + PARTS_LEFT_RIGHT_MARGIN;
             }
+            ((XmlElement)svgRoot).SetAttribute("viewBox", "0 0 " + X_LANE_POSITION.ToString() + " 710");
+            ((XmlElement)svgRoot).SetAttribute("width", X_LANE_POSITION.ToString());
             return;
         }
 

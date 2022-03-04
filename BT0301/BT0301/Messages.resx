@@ -155,4 +155,7 @@
   <data name="ERR_PROCESS_FAILED" xml:space="preserve">
     <value>[{0}]が失敗しました。</value>
   </data>
+  <data name="INFO_NO_ADDCIRCUIT" xml:space="preserve">
+    <value>追加ファイル対象結線ありません。</value>
+  </data>
 </root>

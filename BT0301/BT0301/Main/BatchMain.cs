@@ -57,7 +57,7 @@ namespace BT0301Batch
                 ////////////////////////////////////////////////////
                 foreach(Hashtable searchId in targets)
                 {
-                   try
+                    try
                     {
                         dtCreateStart = DateTime.Now;
                         // テンプレート作成IDごとトランザクション開始
@@ -144,56 +144,68 @@ namespace BT0301Batch
                             //SVGテンプレート
                             string templateFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @".\template\AddTemplate.svg");
                             //追加ファイル名
-                            string addSvgFile = BatchBase.hinagataDir + "\\" + searchId["create_template_id"].ToString() + 
+                            string addSvgFile = BatchBase.hinagataDir + "\\" + searchId["create_template_id"].ToString() +
                                 "\\SVG\\ADD_SVG.svg";
                             string addPdfFile = BatchBase.hinagataDir + "\\" + searchId["create_template_id"].ToString() +
                                 "\\PDF\\ADD_SVG.pdf";
 
                             IList<Hashtable> addInfo = SearchAddFileWireInfo(assingedWires);
 
-                            Dictionary<string, List<Hashtable>> dicAdd = new Dictionary<string, List<Hashtable>>();
-                            foreach (Hashtable wire in addInfo)
+                            //追加ファイル対象結線あり
+                            if (addInfo != null && addInfo.Count > 0)
                             {
-                                //パーツペア辞書化
-                                if (!dicAdd.Keys.Contains(wire["row_num"].ToString()))
+                                Dictionary<string, List<Hashtable>> dicAdd = new Dictionary<string, List<Hashtable>>();
+                                foreach (Hashtable wire in addInfo)
                                 {
-                                    List<Hashtable> addwires = new List<Hashtable>();
-                                    addwires.Add(wire);
-                                    dicAdd.Add(wire["row_num"].ToString(), addwires);
+                                    //パーツペア辞書化
+                                    if (!dicAdd.Keys.Contains(wire["row_num"].ToString()))
+                                    {
+                                        List<Hashtable> addwires = new List<Hashtable>();
+                                        addwires.Add(wire);
+                                        dicAdd.Add(wire["row_num"].ToString(), addwires);
+                                    }
+                                    else
+                                    {
+                                        dicAdd[wire["row_num"].ToString()].Add(wire);
+                                    }
                                 }
-                                else
-                                {
-                                    dicAdd[wire["row_num"].ToString()].Add(wire);
-                                }
-                            }
-                            //追加ファイル作成
-                            AddFile addfile = new AddFile(templateFile);
-                            addfile.GenerateAddFigDiagramFile(dicAdd);
+                                //追加ファイル作成
+                                AddFile addfile = new AddFile(templateFile);
+                                addfile.GenerateAddFigDiagramFile(dicAdd);
 
-                            //追加ファイル保存
-                            addfile.SVGSave(addSvgFile);
+                                //追加ファイル保存
+                                addfile.SVGSave(addSvgFile);
 
-                            //朱書きしたファイルについてPDFを作成する
-                            PDFUtil.GeneratePDF(addSvgFile, addPdfFile);
+                                //朱書きしたファイルについてPDFを作成する
+                                PDFUtil.GeneratePDF(addSvgFile, addPdfFile);
 
-                            //更新DB（追加ファイル）
-                            Hashtable addFile = new Hashtable
+                                //更新DB（追加ファイル）
+                                Hashtable addFile = new Hashtable
                             {
                                 {"create_svg_file_name" , addSvgFile},
                                 {"create_pdf_file_name",addPdfFile},
-                                { "create_template_id", searchId["create_template_id"].ToString()},
+                                { "create_template_id", Convert.ToInt32(searchId["create_template_id"].ToString())},
 
                             };
-                            UpdateAddFile(addFile);
-                            
-                            //状態更新
-                            UpdateEndCreateTemplateStatus(Convert.ToInt32(searchId["create_template_id"].ToString()),
-                                   STATUS_CD_COMPLETED);
+                                UpdateAddFile(addFile);
+
+                                //状態更新
+                                UpdateEndCreateTemplateStatus(Convert.ToInt32(searchId["create_template_id"].ToString()),
+                                       STATUS_CD_COMPLETED);
+                            }
+                            else
+                            {
+
+                                CLogger.Logger("INFO_NO_ADDCIRCUIT");
+                                BatchBase.AppendErrMsg("INFO_NO_ADDCIRCUIT");
+                            }
+
+
+                            //ログメッセージDB書き込み
+                            BatchBase.dtCreateEnd = DateTime.Now;
+                            BatchBase.WriteErrMsg_DB();
+                            db.Commit();
                         }
-                        //ログメッセージDB書き込み
-                        BatchBase.dtCreateEnd = DateTime.Now;
-                        BatchBase.WriteErrMsg_DB();
-                        db.Commit();
                     }
                     catch (Exception ex)
                     {
@@ -277,7 +289,7 @@ namespace BT0301Batch
 
             try
             {
-                db.Update("UpdateEndSearchStatus", updateParams);
+                db.Update("UpdateEndCreateTemplateStatus", updateParams);
             }
             catch (Exception ex)
             {
@@ -389,22 +401,23 @@ namespace BT0301Batch
         /// <returns></returns>
         private IList<Hashtable> SearchAddFileWireInfo(Dictionary<string,Dictionary<string, List<Hashtable>>> assingedWires)
         {
-            List<string> selectParams = new List<string>();
+            List<string> wireDetail = new List<string>();
             foreach (string fig in assingedWires["ADDWIRES"].Keys)
             {
                 foreach (Hashtable rec in assingedWires["ADDWIRES"][fig])
                 {
-                    selectParams.Add(rec["wire_list_detail_id"].ToString());
+                    wireDetail.Add(rec["wire_list_detail_id"].ToString());
                 }
             }
-            var wireDetail =new Hashtable 
-            { 
-                { "detail_id", selectParams }
-            };
+            //検索対象なし
+            if(wireDetail.Count < 1) return null; 
+
+            string detail_id = string.Join(",", wireDetail.ToArray());
+
             IList<Hashtable> wireInfos;
             try
             {
-                wireInfos = db.QueryForList<Hashtable>("SearchAddWireInfo", wireDetail);
+                wireInfos = db.QueryForList<Hashtable>("SearchAddWireInfo", detail_id);
             }
             catch (Exception ex)
             {

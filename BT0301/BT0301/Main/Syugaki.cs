@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 
@@ -66,7 +67,10 @@ namespace BT0301Batch
                 {
                     Directory.CreateDirectory(Path.GetDirectoryName(filePath));
                 }
-                _xmlDoc.Save(filePath); 
+                XmlTextWriter writer = new XmlTextWriter(filePath, Encoding.UTF8);
+                writer.Formatting = Formatting.Indented;
+                _xmlDoc.Save(writer);
+                writer.Close();
             }
         }
         /// <summary>
@@ -234,6 +238,7 @@ namespace BT0301Batch
 
             elem.SetAttribute("style", TEXT_STYLE_CENTER);
             elem.InnerText = text;
+           // elem.InnerXml= elem.OuterXml + "\n\r";
 
             return elem;
         }

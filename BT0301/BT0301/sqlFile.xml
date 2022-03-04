@@ -273,7 +273,7 @@ calc_wireids as (
 	</statement>
 
 	  <!-- 割り当たらない経線情報 検索 -->
-	  <statement id="SearchAddWireInfo" parameterClass="Hashtable" resultClass="HashTable" >
+	  <statement id="SearchAddWireInfo" parameterClass="string" resultClass="HashTable" >
 		  <![CDATA[ 
 	  with diff as (
 	  select
@@ -309,9 +309,7 @@ calc_wireids as (
 	  detail.from_parts_code = diff.from_parts_code
 	  and detail.to_parts_code = diff.to_parts_code
 	  )
-	 <iterate property="detail_id" prepend="where detail.wire_list_detail_id in" open="(" close=")" conjunction=",">
-        #detail_id[]#
-      </iterate>
+	 where detail.wire_list_detail_id in ($detail_id1$)
 	  order by
 	  detail.from_parts_code
 	  , detail.to_parts_code
