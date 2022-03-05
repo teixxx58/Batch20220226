@@ -117,8 +117,7 @@ namespace BT0301Batch
                 fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#from_hw_parts_name#", dicWires[key][0]["from_wh_parts_name"].ToString());
                 pts = dicWires[key][0]["from_wh_parts_name"].ToString().Length;
                 //FROMパーツ名称
-                string fromPartsNamePosition = (X_LANE_POSITION + partsWidth / 2 - pts * FONT_HEIGH / 2) +
-                    "  " + (TOP_MARGIN - FONT_MARGIN *2);
+                string fromPartsNamePosition = X_LANE_POSITION  + "  " + (TOP_MARGIN - FONT_MARGIN *2);
                 fromParts.InnerXml = Regex.Replace(fromParts.InnerXml, "#fromPartsNamePosition#", fromPartsNamePosition);
 
                 //Fromパーツ名称
@@ -143,8 +142,7 @@ namespace BT0301Batch
                     dicWires[key][0]["to_wh_parts_name"].ToString());
                 //Toパーツ名称
                 pts = dicWires[key][0]["to_wh_parts_name"].ToString().Length;
-                string toPartsNamePosition = (X_LANE_POSITION  + partsWidth /2 - pts*FONT_HEIGH/2) + 
-                    "  " + (TOP_MARGIN + 2*PARTS_HEIGHT + LINE_LENGTH + FONT_HEIGH + FONT_MARGIN);
+                string toPartsNamePosition = X_LANE_POSITION + "  " + (TOP_MARGIN + 2*PARTS_HEIGHT + LINE_LENGTH + FONT_HEIGH + FONT_MARGIN);
                 toParts.InnerXml = Regex.Replace(toParts.InnerXml, "#toPartsNamePosition#", toPartsNamePosition);
 
                 //Toパーツ名称

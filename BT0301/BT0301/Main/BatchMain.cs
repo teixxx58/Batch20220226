@@ -121,7 +121,8 @@ namespace BT0301Batch
                                 syugaki.RedDraws(syugakiFigs);
 
                                 //結線削除
-                                syugaki.DeleteRedDraws(assingedWires["ADDWIRES"][key]);
+                                if(assingedWires["ADDWIRES"].Count >0)
+                                    syugaki.DeleteRedDraws(assingedWires["ADDWIRES"][key]);
 
                                 //朱書きが完了したファイル保存
                                 syugaki.SVGSave(svgPath);
@@ -189,9 +190,6 @@ namespace BT0301Batch
                             };
                                 UpdateAddFile(addFile);
 
-                                //状態更新
-                                UpdateEndCreateTemplateStatus(Convert.ToInt32(searchId["create_template_id"].ToString()),
-                                       STATUS_CD_COMPLETED);
                             }
                             else
                             {
@@ -201,6 +199,9 @@ namespace BT0301Batch
                             }
 
 
+                            //状態更新
+                            UpdateEndCreateTemplateStatus(Convert.ToInt32(searchId["create_template_id"].ToString()),
+                                   STATUS_CD_COMPLETED);
                             //ログメッセージDB書き込み
                             BatchBase.dtCreateEnd = DateTime.Now;
                             BatchBase.WriteErrMsg_DB();
@@ -401,6 +402,9 @@ namespace BT0301Batch
         /// <returns></returns>
         private IList<Hashtable> SearchAddFileWireInfo(Dictionary<string,Dictionary<string, List<Hashtable>>> assingedWires)
         {
+            if (assingedWires["ADDWIRES"].Count < 1)
+                return null;
+
             List<string> wireDetail = new List<string>();
             foreach (string fig in assingedWires["ADDWIRES"].Keys)
             {

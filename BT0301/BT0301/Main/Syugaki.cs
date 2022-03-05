@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -20,9 +21,9 @@ namespace BT0301Batch
     class Syugaki
     {
         //朱書きTEXT(端子)
-        const string TEXT_STYLE = "fill:#FF0000;font-size:6px;font-family:'Arial';font-weight:bold;text-anchor:end;opacity:0.7";
+        string TEXT_STYLE = "fill:#FF0000;font-size:" + BatchBase.SYUGAKI_FONT_SIZE + "px;font-family:'Arial';font-weight:bold;text-anchor:end;";
         //朱書きTEXT(接続先)
-        const string TEXT_STYLE_CENTER = "fill:#FF0000;font-size:6px;font-family:'Arial';font-weight:bold;text-anchor:middle;opacity:0.7;";
+        string TEXT_STYLE_CENTER = "fill:#FF0000;font-size:" + BatchBase.SYUGAKI_FONT_SIZE + "px; font-family:'Arial';font-weight:bold;";
         //横書き Matrix
         const string HOR_MTX = "matrix(1.00 -0.00 0.00 1.00 @ )";
         //縦書き Matrix
@@ -30,9 +31,10 @@ namespace BT0301Batch
         //結線消し点線
         const string STROKE_DOT_LINE = "stroke-dasharray:5 2 ;";
 
-        private float X_OFFSET = 5F;
+        private float X_OFFSET = 1F;
         private float Y_OFFSET = 3F;
-        private float FONT_SIZE = 8F;
+        private float FONT_SIZE = 6F;
+        private double LINE_WIDTH = 5;
 
         private string SHIELDED = "shielded";
 
@@ -113,7 +115,10 @@ namespace BT0301Batch
                                     if (subNode.Attributes["ewd:lineID"] != null
                                         && subNode.Attributes["ewd:lineID"].Value.Equals(item["svg_line_id"].ToString()))
                                     {
-
+                                        ///test
+                                        node.AppendChild(createPathElement(item["from_point_x"].ToString(),
+                                            item["from_point_y"].ToString(), item["to_point_x"].ToString(),
+                                            item["to_point_y"].ToString()));
                                         ////////////////////////////////////////
                                         // FROM側記載
                                         ////////////////////////////////////////
@@ -142,6 +147,9 @@ namespace BT0301Batch
                                         partsCodeDiffFlag = item["from_parts_code_diff_flg"].ToString();
                                         pinNoDiffFlag = item["from_pin_no_diff_flg"].ToString();
                                         terminalNameDiffFlag = item["from_terminal_name_diff_flg"].ToString();
+                                        //朱書き位置調整
+                                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
+                                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
                                         // 朱書き実施
                                         RedDraw(subNode, x, y, direction,
                                             pinNo, terminalName, code,
@@ -176,6 +184,10 @@ namespace BT0301Batch
                                         pinNoDiffFlag = item["to_pin_no_diff_flg"].ToString();
                                         terminalNameDiffFlag = item["to_terminal_name_diff_flg"].ToString();
 
+                                        //朱書き位置調整
+                                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
+                                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
+
                                         // 朱書き実施
                                         RedDraw(subNode, x, y, direction,
                                             pinNo, terminalName, code,
@@ -187,6 +199,8 @@ namespace BT0301Batch
                         // *************************************
                         // 線色の変更、シールド表現
                         // *************************************
+                        item["wire_color_diff_flg"] = 1;
+                        item["path"] = "test";
                         if (item["wire_color_diff_flg"].ToString().Equals("1"))
                         {
                             // 線色の朱書き
@@ -203,8 +217,8 @@ namespace BT0301Batch
                                     BTPoint centerXY = GetCenterXY(dValue);
 
                                     //シールド朱書き
-                                    string str = item["wire_color_diff_flg"].ToString();
-                                    if (item["path"].ToString() != null) str += " " + SHIELDED;
+                                    string str = item["detail_wire_color"].ToString();
+                                    if (item["path"] != null) str += " " + SHIELDED;
                                     // 左下
                                     ShieldRedDraw(shieldNode, centerXY, str);
 
@@ -238,8 +252,7 @@ namespace BT0301Batch
 
             elem.SetAttribute("style", TEXT_STYLE_CENTER);
             elem.InnerText = text;
-           // elem.InnerXml= elem.OuterXml + "\n\r";
-
+ 
             return elem;
         }
         /// <summary>
@@ -272,26 +285,33 @@ namespace BT0301Batch
 
             string mtx, transform;
             double x, y;
+            SizeF pinNo_size = PDFUtil.MeasureFontSize(Convert.ToString(pinNo));
+            SizeF terminalName_size = PDFUtil.MeasureFontSize(Convert.ToString(terminalName));
+            SizeF code_size = PDFUtil.MeasureFontSize(Convert.ToString(code));
 
+
+            partsCodeDiffFlag = "1";
+           pinNoDiffFlag = "1";
+            terminalNameDiffFlag = "1";
             switch (direction)
             {
                 // 上側へ接続
                 case 0:
                 case 1:
                 case 7:
-                    x = X - X_OFFSET - pinNo.ToString().Length * FONT_SIZE;
-                    y = Y - Y_OFFSET;
+                    x = X - X_OFFSET- pinNo_size.Width;
+                    y = Y + pinNo_size.Height*2;
                     mtx = HOR_MTX;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     pinNoElement.SetAttribute("transform", transform);
 
-                    x = X - X_OFFSET - terminalName.Length * FONT_SIZE;
-                    y = Y - Y_OFFSET - FONT_SIZE;
+                    x = X - X_OFFSET - terminalName_size.Width;
+                    y = Y + terminalName_size.Height * 3;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     terminalElement.SetAttribute("transform", transform);
 
-                    x = X + X_OFFSET;
-                    y = Y - Y_OFFSET;
+                    x = X + LINE_WIDTH;
+                    y = Y + code_size.Height;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     codeElement.SetAttribute("transform", transform);
 
@@ -319,19 +339,20 @@ namespace BT0301Batch
                 case 3:
                 case 4:
                 case 5:
-                    x = X - X_OFFSET - pinNo.ToString().Length * FONT_SIZE;
-                    y = Y + Y_OFFSET + FONT_SIZE;
+
+                    x = X - X_OFFSET- pinNo_size.Width;
+                    y = Y - pinNo_size.Height-1;
                     mtx = HOR_MTX;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     pinNoElement.SetAttribute("transform", transform);
 
-                    x = X - X_OFFSET - terminalName.Length * FONT_SIZE;
-                    y = Y + Y_OFFSET + FONT_SIZE * 2;
+                    x = X - X_OFFSET - terminalName_size.Width;
+                    y = Y - terminalName_size.Height * 2;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     terminalElement.SetAttribute("transform", transform);
 
-                    x = X + X_OFFSET;
-                    y = Y + Y_OFFSET + FONT_SIZE;
+                    x = X + LINE_WIDTH;
+                    y = Y - Y_OFFSET;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     codeElement.SetAttribute("transform", transform);
 
@@ -356,11 +377,9 @@ namespace BT0301Batch
 
                     break;
                 default:
-                    mtx = string.Empty;
 
                     break;
             }
-            Trace.WriteLine("mtx=", mtx);
             if (pinNoDiffFlag.Equals("1"))
             {
                 node.AppendChild(pinNoElement);
@@ -386,9 +405,10 @@ namespace BT0301Batch
             string mtx, transform;
             double x, y;
             XmlElement shieldElem = CreateTextElement(str);
+            SizeF shield_size = PDFUtil.MeasureFontSize(Convert.ToString(str));
 
-            x = centerXY.X - X_OFFSET - FONT_SIZE;
-            y = centerXY.Y + Y_OFFSET + str.Length * FONT_SIZE;
+            x = centerXY.X - X_OFFSET - shield_size.Height;
+            y = centerXY.Y + Y_OFFSET + shield_size.Width/2;
             mtx = VER_MTX;
             transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
             shieldElem.SetAttribute("transform", transform);
@@ -467,6 +487,21 @@ namespace BT0301Batch
                 //ファイル操作の原因で処理中止
                 throw ex;
             }
+        }
+        static int staCnt=0;
+        private XmlElement createPathElement(string tX, string tY, string bX, string bY)
+        {
+            staCnt++;
+            XmlNode root = _xmlDoc.GetElementsByTagName("svg")[0];
+            // xmlns:""防止
+            XmlElement elem = _xmlDoc.CreateElement("path", root.NamespaceURI);
+
+            elem.SetAttribute("style", "stroke:#00FF00;stroke-width: 4.10 ;fill:none;stroke-linecap:butt; stroke-linejoin:round;");
+            elem.SetAttribute("name", "testSVG" + staCnt);
+            string d = " M  " + tX + ",  " + tY + "   L  " + bX + ",    " + bY + "  ";
+            elem.SetAttribute("d", d);
+
+            return elem;
         }
     }
 }

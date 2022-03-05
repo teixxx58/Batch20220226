@@ -108,5 +108,31 @@ namespace BT0301Batch
             }
             return rltImage;
         }
+        /// <summary>
+        /// 文字列のサイズ取得
+        /// </summary>
+        /// <param name="text"></param>
+        /// <returns></returns>
+        public static SizeF MeasureFontSize(string text)
+        {
+
+            Font stringFont = new Font("Arial", 6, GraphicsUnit.Pixel);
+
+            // 最大幅
+            int stringWidth = 100;
+
+            // Set string format.
+            StringFormat newStringFormat = new StringFormat();
+            newStringFormat.FormatFlags = StringFormatFlags.DirectionRightToLeft;
+
+            // 測定
+            Rectangle rect=new Rectangle(0,0,100,10);
+            Bitmap bmp = new Bitmap(rect.Width, rect.Height);
+            Graphics g = Graphics.FromImage(bmp);
+            SizeF　stringSize = g.MeasureString(text, stringFont, stringWidth, newStringFormat);
+
+            return stringSize;
+
+        }
     }
 }

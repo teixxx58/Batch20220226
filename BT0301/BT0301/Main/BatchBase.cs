@@ -24,9 +24,10 @@ namespace BT0301Batch
         //朱書き対象とする最低の類似度
         public static int targetSyugakiMinPoint = Convert.ToInt32(ConfigurationManager.AppSettings["TARGET_SYUGAKI_MIN_POINT"]);
         //朱書きする際のフォントサイズ
-        public static int syugakiFontSize = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_FONT_SIZE"]);
+        public static int SYUGAKI_FONT_SIZE = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_FONT_SIZE"]);
         //朱書きする位置に対しての補正値		
-        public static int syugakiOffsetSize = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_OFFSET_SIZE"]);
+        public static int SYUGAKI_OFFSET_SIZE_X = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_OFFSET_SIZE_X"]);
+        public static int SYUGAKI_OFFSET_SIZE_Y = Convert.ToInt32(ConfigurationManager.AppSettings["SYUGAKI_OFFSET_SIZE_Y"]);
         //テンプレートファイル保存場所ルート		
         public static string loacleDataDir = ConfigurationManager.AppSettings["LOCAL_DATA_DIR"];
         //*.svgのファイル保存パス
