@@ -18,6 +18,11 @@ namespace BT0301Batch
         public double X;
         public double Y;
     }
+    struct BTLine
+    {
+        public BTPoint fromP;
+        public BTPoint toP;
+    }
     class Syugaki
     {
         //朱書きTEXT(端子)
@@ -115,10 +120,10 @@ namespace BT0301Batch
                                     if (subNode.Attributes["ewd:lineID"] != null
                                         && subNode.Attributes["ewd:lineID"].Value.Equals(item["svg_line_id"].ToString()))
                                     {
-                                        ///test
+/*                                        ///test
                                         node.AppendChild(createPathElement(item["from_point_x"].ToString(),
                                             item["from_point_y"].ToString(), item["to_point_x"].ToString(),
-                                            item["to_point_y"].ToString()));
+                                            item["to_point_y"].ToString()));*/
                                         ////////////////////////////////////////
                                         // FROM側記載
                                         ////////////////////////////////////////
@@ -200,7 +205,7 @@ namespace BT0301Batch
                         // 線色の変更、シールド表現
                         // *************************************
                         item["wire_color_diff_flg"] = 1;
-                        item["path"] = "test";
+                        //item["path"] = "test";
                         if (item["wire_color_diff_flg"].ToString().Equals("1"))
                         {
                             // 線色の朱書き
@@ -219,8 +224,9 @@ namespace BT0301Batch
                                     //シールド朱書き
                                     string str = item["detail_wire_color"].ToString();
                                     if (item["path"] != null) str += " " + SHIELDED;
-                                    // 左下
-                                    ShieldRedDraw(shieldNode, centerXY, str);
+                                    // 中心座標、方向、色
+                                    ShieldRedDraw(shieldNode, centerXY, str,
+                                        Convert.ToInt16(item["from_direction"].ToString()));
 
                                 }
                             }
@@ -289,10 +295,10 @@ namespace BT0301Batch
             SizeF terminalName_size = PDFUtil.MeasureFontSize(Convert.ToString(terminalName));
             SizeF code_size = PDFUtil.MeasureFontSize(Convert.ToString(code));
 
-
-            partsCodeDiffFlag = "1";
+            //test
+/*            partsCodeDiffFlag = "1";
            pinNoDiffFlag = "1";
-            terminalNameDiffFlag = "1";
+            terminalNameDiffFlag = "1";*/
             switch (direction)
             {
                 // 上側へ接続
@@ -318,19 +324,20 @@ namespace BT0301Batch
                     break;
                 case 2:
                     // 右側へ接続
-                    x = X + X_OFFSET;
-                    y = Y - Y_OFFSET;
-                    mtx = VER_MTX;
+                    x = X - X_OFFSET - pinNo_size.Width;
+                    y = Y - Y_OFFSET - pinNo_size.Height;
+                    
+                    mtx = HOR_MTX;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     pinNoElement.SetAttribute("transform", transform);
 
-                    x = X - X_OFFSET - FONT_SIZE;
-                    y = Y - Y_OFFSET;
+                    x = X - FONT_SIZE - X_OFFSET - terminalName_size.Width - pinNo_size.Width;
+                    y = Y - Y_OFFSET - terminalName_size.Height;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     terminalElement.SetAttribute("transform", transform);
 
-                    x = X + X_OFFSET;
-                    y = Y + Y_OFFSET + code.Length * FONT_SIZE;
+                    x = X - X_OFFSET - code_size.Width;
+                    y = Y + Y_OFFSET + code_size.Height;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     codeElement.SetAttribute("transform", transform);
 
@@ -359,19 +366,19 @@ namespace BT0301Batch
                     break;
                 // 左側へ接続
                 case 6:
-                    x = X - X_OFFSET - FONT_SIZE;
-                    y = Y - Y_OFFSET;
-                    mtx = VER_MTX;
+                    x = X + 3*X_OFFSET ;
+                    y = Y - Y_OFFSET - pinNo_size.Height;
+                    mtx = HOR_MTX;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     pinNoElement.SetAttribute("transform", transform);
 
-                    x = X - X_OFFSET - FONT_SIZE * 2;
-                    y = Y - Y_OFFSET;
+                    x = X + 3*X_OFFSET + FONT_SIZE + pinNo_size.Width;
+                    y = Y - Y_OFFSET - terminalName_size.Height;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     terminalElement.SetAttribute("transform", transform);
 
-                    x = X - X_OFFSET - FONT_SIZE;
-                    y = Y + Y_OFFSET + code.Length * FONT_SIZE;
+                    x = X + 3*X_OFFSET;
+                    y = Y + Y_OFFSET + code_size.Height;
                     transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
                     codeElement.SetAttribute("transform", transform);
 
@@ -400,16 +407,27 @@ namespace BT0301Batch
         /// <param name="node"></param>
         /// <param name="centerXY"></param>
         /// <param name="str"></param>
-        private void ShieldRedDraw(XmlNode node, BTPoint centerXY, string str)
+        private void ShieldRedDraw(XmlNode node, BTPoint centerXY, string str, int direc)
         {
             string mtx, transform;
             double x, y;
             XmlElement shieldElem = CreateTextElement(str);
             SizeF shield_size = PDFUtil.MeasureFontSize(Convert.ToString(str));
+            switch (direc)
+            {
+                case 2:
+                case 6:
+                    x = centerXY.X - X_OFFSET - shield_size.Width/2;
+                    y = centerXY.Y - Y_OFFSET;
+                    mtx = HOR_MTX;
+                    break;
+                default:
+                    x = centerXY.X - X_OFFSET - shield_size.Height;
+                    y = centerXY.Y + Y_OFFSET + shield_size.Width / 2;
+                    mtx = VER_MTX;
+                    break;        
+            }
 
-            x = centerXY.X - X_OFFSET - shield_size.Height;
-            y = centerXY.Y + Y_OFFSET + shield_size.Width/2;
-            mtx = VER_MTX;
             transform = Regex.Replace(mtx, "@", string.Format("{0:0.0}, {1:0.0}", x, y));
             shieldElem.SetAttribute("transform", transform);
 
@@ -417,11 +435,11 @@ namespace BT0301Batch
         }
 
         /// <summary>
-        /// 結線真ん中座標取得
+        /// 結線座標取得
         /// </summary>
         /// <param name="dValue"></param>
         /// <returns></returns>        
-        private BTPoint GetCenterXY(string dValue)
+        private BTLine GetLine(string dValue)
         {
             int posM = dValue.IndexOf('M');
             int posFirstL = dValue.IndexOf('L');
@@ -437,19 +455,30 @@ namespace BT0301Batch
             // ⇒"zzz.zz,zzz.zz"
             toXY = Regex.Replace(toXY, @"\s", "");
 
-            BTPoint fromPoint = new BTPoint();
+            BTLine line = new BTLine();
             string[] temp = fromXY.Split(',');
-            fromPoint.X = Convert.ToDouble(temp[0]);
-            fromPoint.Y = Convert.ToDouble(temp[1]);
+            line.fromP.X = Convert.ToDouble(temp[0]);
+            line.fromP.Y = Convert.ToDouble(temp[1]);
 
-            BTPoint toPoint = new BTPoint();
             temp = toXY.Split(',');
-            toPoint.X = Convert.ToDouble(temp[0]);
-            toPoint.Y = Convert.ToDouble(temp[1]);
+            line.toP.X = Convert.ToDouble(temp[0]);
+            line.toP.Y = Convert.ToDouble(temp[1]);
+
+            return line;
+
+        }
+        /// <summary>
+        /// 結線真ん中座標取得
+        /// </summary>
+        /// <param name="dValue"></param>
+        /// <returns></returns>
+        private BTPoint GetCenterXY(string dValue)
+        {
+            BTLine line = GetLine(dValue);
 
             BTPoint centerXY = new BTPoint();
-            centerXY.X = (fromPoint.X + toPoint.X) / 2;
-            centerXY.Y = (fromPoint.Y + toPoint.Y) / 2;
+            centerXY.X = (line.fromP.X + line.toP.X) / 2;
+            centerXY.Y = (line.fromP.Y + line.toP.Y) / 2;
 
             return centerXY;
         }
