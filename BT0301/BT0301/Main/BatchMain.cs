@@ -120,7 +120,9 @@ namespace BT0301Batch
                                 Syugaki syugaki = new Syugaki(figPath);
                                 syugaki.RedDraws(syugakiFigs);
 
-                                //結線削除
+                                //結線削除（確認要？？）
+                                //配線図ファイルの結線において、１００点、または、朱書きされた結線の以外の結線をすべて対象？
+                                //入力された結線情報の中、割り当たらなかったWire_IDを対象のみ？
                                 if(assingedWires["ADDWIRES"].Count >0)
                                     syugaki.DeleteRedDraws(assingedWires["ADDWIRES"][key]);
 

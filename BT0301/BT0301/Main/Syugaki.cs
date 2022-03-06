@@ -96,7 +96,11 @@ namespace BT0301Batch
 
                 XmlNamespaceManager nsmgr = new XmlNamespaceManager(_xmlDoc.NameTable);
                 nsmgr.AddNamespace("ns", "http://www.w3.org/2000/svg");
-                XmlNodeList nodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:g", nsmgr);
+                nsmgr.AddNamespace("ewd", "http://shcl.co.jp/ewd");
+                nsmgr.AddNamespace("a", "http://ns.adobe.com/AdobeSVGViewerExtensions/3.0/");
+
+
+                //XmlNodeList nodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:g", nsmgr);
                 XmlNodeList shieldNodeList = _xmlDoc.SelectNodes("/ns:svg/ns:g/ns:a", nsmgr);
 
                 // 結線ごとに、SVGに朱書き内容（部品コード、端子、ピン番号）を記載する。
@@ -109,98 +113,144 @@ namespace BT0301Batch
                         // *************************************
                         // 部品、端子、ピン番号の変更
                         // *************************************
-                        foreach (XmlNode node in nodeList)
+                        //データチェック
+                        XmlNode fromPartsNode, toPartsNode, fromLabelNode, toLabelNode;
+                        fromPartsNode = _xmlDoc.SelectSingleNode("/ns:svg/ns:g/ns:g[@ewd:code='" + item["from_new_parts_cd"].ToString() + "']", nsmgr);
+                        if (fromPartsNode == null)
                         {
-                            if (node.Attributes["ewd:code"] != null
-                                && node.Attributes["ewd:code"].Value.Equals(item["from_new_parts_cd"].ToString()))
+                            CLogger.Logger("WNG_PARTS_LOSS",_fileName, item["from_new_parts_cd"].ToString());
+                            BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["from_new_parts_cd"].ToString());
+
+                            toPartsNode = _xmlDoc.SelectSingleNode("/ns:svg/ns:g/ns:g[@ewd:code='" + item["to_new_parts_cd"].ToString() + "']", nsmgr);
+                            if (toPartsNode == null)
                             {
-                                XmlNodeList subNodes = node.SelectNodes("ns:g", nsmgr);
-                                foreach (XmlNode subNode in subNodes)
-                                {
-                                    if (subNode.Attributes["ewd:lineID"] != null
-                                        && subNode.Attributes["ewd:lineID"].Value.Equals(item["svg_line_id"].ToString()))
-                                    {
-/*                                        ///test
-                                        node.AppendChild(createPathElement(item["from_point_x"].ToString(),
-                                            item["from_point_y"].ToString(), item["to_point_x"].ToString(),
-                                            item["to_point_y"].ToString()));*/
-                                        ////////////////////////////////////////
-                                        // FROM側記載
-                                        ////////////////////////////////////////
-                                        // T_SIMILAR_CALC.REVERSE_FLGが0の場合
-                                        if (item["reverse_flg"].ToString().Equals("0"))
-                                        {
-                                            x = Convert.ToDouble(item["from_point_x"].ToString());
-                                            y = Convert.ToDouble(item["from_point_y"].ToString()); 
-                                            direction = Convert.ToInt16(item["from_direction"].ToString());
-                                            pinNo = Convert.ToInt16(item["from_pin_no"].ToString());
-                                            terminalName = item["from_terminal_name"].ToString();
-                                            code = item["from_new_parts_cd"].ToString();
-
-                                        }
-                                        // T_SIMILAR_CALC.REVERSE_FLGが1の場合
-                                        else
-                                        {
-                                            x = Convert.ToDouble(item["to_point_x"].ToString());
-                                            y = Convert.ToDouble(item["to_point_y"].ToString());
-                                            direction = Convert.ToInt16(item["to_direction"].ToString());
-                                            pinNo = Convert.ToInt16(item["to_pin_no"].ToString());
-                                            terminalName = item["to_terminal_name"].ToString();
-                                            code = item["to_new_parts_cd"].ToString();
-                                        }
-
-                                        partsCodeDiffFlag = item["from_parts_code_diff_flg"].ToString();
-                                        pinNoDiffFlag = item["from_pin_no_diff_flg"].ToString();
-                                        terminalNameDiffFlag = item["from_terminal_name_diff_flg"].ToString();
-                                        //朱書き位置調整
-                                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
-                                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
-                                        // 朱書き実施
-                                        RedDraw(subNode, x, y, direction,
-                                            pinNo, terminalName, code,
-                                            partsCodeDiffFlag, pinNoDiffFlag, terminalNameDiffFlag);
-
-
-                                        ////////////////////////////////////////
-                                        // TO側記載
-                                        ////////////////////////////////////////
-                                        // T_SIMILAR_CALC.REVERSE_FLGが1の場合
-                                        if (item["reverse_flg"].ToString().Equals("1"))
-                                        {
-                                            x = Convert.ToDouble(item["from_point_x"].ToString());
-                                            y = Convert.ToDouble(item["from_point_y"].ToString());
-                                            direction = Convert.ToInt16(item["from_direction"].ToString());
-                                            pinNo = Convert.ToInt16(item["from_pin_no"].ToString());
-                                            terminalName = item["from_terminal_name"].ToString();
-                                            code = item["from_new_parts_cd"].ToString();
-                                        }
-                                        // T_SIMILAR_CALC.REVERSE_FLGが0の場合
-                                        else
-                                        {
-                                            x = Convert.ToDouble(item["to_point_x"].ToString());
-                                            y = Convert.ToDouble(item["to_point_y"].ToString());
-                                            direction = Convert.ToInt16(item["to_direction"].ToString());
-                                            pinNo = Convert.ToInt16(item["to_pin_no"].ToString());
-                                            terminalName = item["to_terminal_name"].ToString();
-                                            code = item["to_new_parts_cd"].ToString();
-
-                                        }
-                                        partsCodeDiffFlag = item["to_parts_code_diff_flg"].ToString();
-                                        pinNoDiffFlag = item["to_pin_no_diff_flg"].ToString();
-                                        terminalNameDiffFlag = item["to_terminal_name_diff_flg"].ToString();
-
-                                        //朱書き位置調整
-                                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
-                                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
-
-                                        // 朱書き実施
-                                        RedDraw(subNode, x, y, direction,
-                                            pinNo, terminalName, code,
-                                            partsCodeDiffFlag, pinNoDiffFlag, terminalNameDiffFlag);
-                                    }
-                                }
+                                CLogger.Logger("WNG_PARTS_LOSS", _fileName, item["to_new_parts_cd"].ToString());
+                                BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["to_new_parts_cd"].ToString());
+                                //配線図に対象パーツがないため、スキップ
+                                continue;
+                            }
+                            else
+                            {
+                                fromPartsNode = toPartsNode;
                             }
                         }
+                        else
+                        {
+                            toPartsNode = _xmlDoc.SelectSingleNode("/ns:svg/ns:g/ns:g[@ewd:code='" + item["to_new_parts_cd"].ToString() + "']", nsmgr);
+                            if (toPartsNode == null)
+                            {
+                                CLogger.Logger("WNG_PARTS_LOSS", _fileName, item["to_new_parts_cd"].ToString());
+                                BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["to_new_parts_cd"].ToString());
+                                toPartsNode = fromPartsNode;
+                            }
+                        }
+                        //結線取得
+                        fromLabelNode = fromPartsNode.SelectSingleNode("ns:g[@ewd:lineID='" + item["svg_line_id"].ToString() + "']", nsmgr);
+                        toLabelNode = toPartsNode.SelectSingleNode("ns:g[@ewd:lineID='" + item["svg_line_id"].ToString() + "']", nsmgr);
+                        if (fromLabelNode == null)
+                        {
+                            CLogger.Logger("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                            BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                            if (toLabelNode == null)
+                            {
+                                CLogger.Logger("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                                BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                                //配線図に対象結線がないため、スキップ
+                                continue;
+                            }
+                            else
+                            {
+                                fromLabelNode = toLabelNode;
+                            }
+                        }
+                        else
+                        {
+                            if (toLabelNode == null)
+                            {
+                                CLogger.Logger("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                                BatchBase.AppendErrMsg("WNG_PARTS_LOSS", _fileName, item["svg_line_id"].ToString());
+                                toLabelNode = fromLabelNode;
+                            }
+                        }
+
+                        ///test
+/*                        fromPartsNode.AppendChild(createPathElement(item["from_point_x"].ToString(),
+                                            item["from_point_y"].ToString(), item["to_point_x"].ToString(),
+                                            item["to_point_y"].ToString()));*/
+                        ////////////////////////////////////////
+                        // FROM側記載
+                        ////////////////////////////////////////
+                        // T_SIMILAR_CALC.REVERSE_FLGが0の場合
+                        if (item["reverse_flg"].ToString().Equals("0"))
+                        {
+                            x = Convert.ToDouble(item["from_point_x"].ToString());
+                            y = Convert.ToDouble(item["from_point_y"].ToString());
+                            direction = Convert.ToInt16(item["from_direction"].ToString());
+                            pinNo = Convert.ToInt16(item["detail_from_pin_no"].ToString());
+                            terminalName = item["detail_from_terminal_name"].ToString();
+                            code = item["detail_from_parts_code"].ToString();
+
+                        }
+                        // T_SIMILAR_CALC.REVERSE_FLGが1の場合
+                        else
+                        {
+                            x = Convert.ToDouble(item["to_point_x"].ToString());
+                            y = Convert.ToDouble(item["to_point_y"].ToString());
+                            direction = Convert.ToInt16(item["to_direction"].ToString());
+                            pinNo = Convert.ToInt16(item["detail_to_pin_no"].ToString());
+                            terminalName = item["detail_to_terminal_name"].ToString();
+                            code = item["detail_to_parts_code"].ToString();
+                        }
+
+                        partsCodeDiffFlag = item["from_parts_code_diff_flg"].ToString();
+                        pinNoDiffFlag = item["from_pin_no_diff_flg"].ToString();
+                        terminalNameDiffFlag = item["from_terminal_name_diff_flg"].ToString();
+                        //朱書き位置調整
+                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
+                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
+                        // 朱書き実施
+                        RedDraw(fromLabelNode, x, y, direction,
+                            pinNo, terminalName, code,
+                            partsCodeDiffFlag, pinNoDiffFlag, terminalNameDiffFlag);
+
+
+                        ////////////////////////////////////////
+                        // TO側記載
+                        ////////////////////////////////////////
+                        // T_SIMILAR_CALC.REVERSE_FLGが1の場合
+                        if (item["reverse_flg"].ToString().Equals("1"))
+                        {
+                            x = Convert.ToDouble(item["from_point_x"].ToString());
+                            y = Convert.ToDouble(item["from_point_y"].ToString());
+                            direction = Convert.ToInt16(item["from_direction"].ToString());
+                            pinNo = Convert.ToInt16(item["detail_from_pin_no"].ToString());
+                            terminalName = item["detail_from_terminal_name"].ToString();
+                            code = item["detail_from_parts_code"].ToString();
+                        }
+                        // T_SIMILAR_CALC.REVERSE_FLGが0の場合
+                        else
+                        {
+                            x = Convert.ToDouble(item["to_point_x"].ToString());
+                            y = Convert.ToDouble(item["to_point_y"].ToString());
+                            direction = Convert.ToInt16(item["to_direction"].ToString());
+                            pinNo = Convert.ToInt16(item["detail_to_pin_no"].ToString());
+                            terminalName = item["detail_to_terminal_name"].ToString();
+                            code = item["detail_to_parts_code"].ToString();
+
+                        }
+                        partsCodeDiffFlag = item["to_parts_code_diff_flg"].ToString();
+                        pinNoDiffFlag = item["to_pin_no_diff_flg"].ToString();
+                        terminalNameDiffFlag = item["to_terminal_name_diff_flg"].ToString();
+
+                        //朱書き位置調整
+                        x = x + BatchBase.SYUGAKI_OFFSET_SIZE_X;
+                        y = y + BatchBase.SYUGAKI_OFFSET_SIZE_Y;
+
+                        // 朱書き実施
+                        RedDraw(toLabelNode, x, y, direction,
+                            pinNo, terminalName, code,
+                            partsCodeDiffFlag, pinNoDiffFlag, terminalNameDiffFlag);
+
                         // *************************************
                         // 線色の変更、シールド表現
                         // *************************************
@@ -296,15 +346,15 @@ namespace BT0301Batch
             SizeF code_size = PDFUtil.MeasureFontSize(Convert.ToString(code));
 
             //test
-/*            partsCodeDiffFlag = "1";
-           pinNoDiffFlag = "1";
-            terminalNameDiffFlag = "1";*/
+            partsCodeDiffFlag = "1";
+            pinNoDiffFlag = "1";
+            terminalNameDiffFlag = "1";
             switch (direction)
             {
                 // 上側へ接続
-                case 0:
-                case 1:
-                case 7:
+                case 3:
+                case 4:
+                case 5:
                     x = X - X_OFFSET- pinNo_size.Width;
                     y = Y + pinNo_size.Height*2;
                     mtx = HOR_MTX;
@@ -343,10 +393,9 @@ namespace BT0301Batch
 
                     break;
                 // 下側へ接続
-                case 3:
-                case 4:
-                case 5:
-
+                case 0:
+                case 1:
+                case 7:
                     x = X - X_OFFSET- pinNo_size.Width;
                     y = Y - pinNo_size.Height-1;
                     mtx = HOR_MTX;
@@ -423,7 +472,7 @@ namespace BT0301Batch
                     break;
                 default:
                     x = centerXY.X - X_OFFSET - shield_size.Height;
-                    y = centerXY.Y + Y_OFFSET + shield_size.Width / 2;
+                    y = centerXY.Y + shield_size.Width / 2;
                     mtx = VER_MTX;
                     break;        
             }

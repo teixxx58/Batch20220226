@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -15,19 +16,19 @@ namespace BT0301Batch
         //LEFTマージン
         double LEFT_MARGIN = 150;
         //経線間間隔
-        double LINE_INTERVAL = 30;
+        double LINE_INTERVAL = 60;
         //経線の長さ
         double LINE_LENGTH = 60;
         //パーツの高さ
         double PARTS_HEIGHT = 35;
         //パーツの左右マージン
-        double PARTS_LEFT_RIGHT_MARGIN = 20;
+        double PARTS_LEFT_RIGHT_MARGIN = 30;
         //フォント高さ
         double FONT_HEIGH = 6;
         //フォントマージン
         double FONT_MARGIN = 2;
         //結線幅
-        double LINE_WEIDTH = 5.1;
+        double LINE_WEIDTH = 4.1;
 
 
         private XmlDocument _xmlDoc;
@@ -240,9 +241,9 @@ namespace BT0301Batch
                     label.InnerXml = Regex.Replace(label.InnerXml, "#from_terminal_name#",
                         detailWire["from_terminal_name"].ToString());
                     
-                    pts = FONT_HEIGH * detailWire["from_terminal_name"].ToString().Length;
+                    SizeF fromTerminalName_size = PDFUtil.MeasureFontSize(detailWire["from_terminal_name"].ToString());
                     label.InnerXml = Regex.Replace(label.InnerXml, "#fromTerminalNameX#",
-                        (X_LANE_POSITION - pts/2 + LINE_WEIDTH/2).ToString());
+                        (X_LANE_POSITION - fromTerminalName_size.Width/2 + LINE_WEIDTH/2).ToString());
 
                     label.InnerXml = Regex.Replace(label.InnerXml, "#fromTerminalNameY#",
                         (TOP_MARGIN + PARTS_HEIGHT - FONT_MARGIN).ToString());
@@ -250,9 +251,9 @@ namespace BT0301Batch
                     label.InnerXml = Regex.Replace(label.InnerXml, "#to_terminal_name#",
                         detailWire["to_terminal_name"].ToString());
                     
-                    pts = FONT_HEIGH * detailWire["to_terminal_name"].ToString().Length;
+                    SizeF toTerminalName_size = PDFUtil.MeasureFontSize(detailWire["to_terminal_name"].ToString());
                     label.InnerXml = Regex.Replace(label.InnerXml, "#toTerminalNameX#",
-                        (X_LANE_POSITION - pts/2 + LINE_WEIDTH/2).ToString());
+                        (X_LANE_POSITION - toTerminalName_size.Width/2 + LINE_WEIDTH / 2).ToString());
 
                     label.InnerXml = Regex.Replace(label.InnerXml, "#toTerminalNameY#",
                         (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH + FONT_HEIGH + FONT_MARGIN).ToString());
@@ -261,9 +262,10 @@ namespace BT0301Batch
                     label.InnerXml = Regex.Replace(label.InnerXml, "#from_pin_no#",
                         detailWire["from_pin_no"].ToString());
 
-                    pts = FONT_HEIGH * detailWire["from_pin_no"].ToString().Length;
+                    SizeF fromPinNo_size = PDFUtil.MeasureFontSize(detailWire["from_pin_no"].ToString());
+
                     label.InnerXml = Regex.Replace(label.InnerXml, "#fromPinNoX#",
-                        (X_LANE_POSITION - pts - FONT_MARGIN).ToString());
+                        (X_LANE_POSITION - fromPinNo_size.Width - FONT_MARGIN).ToString());
 
                     label.InnerXml = Regex.Replace(label.InnerXml, "#fromPinNoY#",
                         (TOP_MARGIN + PARTS_HEIGHT + FONT_HEIGH).ToString());
@@ -271,9 +273,9 @@ namespace BT0301Batch
                     label.InnerXml = Regex.Replace(label.InnerXml, "#to_pin_no#",
                         detailWire["to_pin_no"].ToString());
 
-                    pts = FONT_HEIGH * detailWire["to_pin_no"].ToString().Length;
+                    SizeF toPinNo_size = PDFUtil.MeasureFontSize(detailWire["to_pin_no"].ToString());
                     label.InnerXml = Regex.Replace(label.InnerXml, "#toPinNoX#",
-                        (X_LANE_POSITION - pts - FONT_MARGIN).ToString());
+                        (X_LANE_POSITION - toPinNo_size.Width - FONT_MARGIN).ToString());
                     label.InnerXml = Regex.Replace(label.InnerXml, "#toPinNoY#",
                         (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH - FONT_MARGIN).ToString());
 
@@ -284,9 +286,9 @@ namespace BT0301Batch
                     label.InnerXml = Regex.Replace(label.InnerXml, "#wireColorX#",
                         (X_LANE_POSITION - FONT_HEIGH).ToString());
 
-                    pts = FONT_HEIGH * detailWire["wire_color"].ToString().Length;
+                    SizeF color_size = PDFUtil.MeasureFontSize(detailWire["wire_color"].ToString());
                     label.InnerXml = Regex.Replace(label.InnerXml, "#wireColorY#",
-                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH/2 + pts / 2).ToString());
+                        (TOP_MARGIN + PARTS_HEIGHT + LINE_LENGTH/2 + color_size.Width / 2).ToString());
 
                     svgChildren.AppendChild(label.CloneNode(true));
                     //何本目結線

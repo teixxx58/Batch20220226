@@ -158,4 +158,7 @@
   <data name="INFO_NO_ADDCIRCUIT" xml:space="preserve">
     <value>追加ファイル対象結線ありません。</value>
   </data>
+  <data name="WNG_PARTS_LOSS" xml:space="preserve">
+    <value>ファイルに[{0}]に{1}のデータ欠損があります。</value>
+  </data>
 </root>
